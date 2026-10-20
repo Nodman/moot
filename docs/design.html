@@ -1,0 +1,458 @@
+<title>Moot Plugin Design</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Sans+3:ital,wght@0,400;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* layout: one reading column, sticky section index on wide screens, boxed flow strips for the lifecycle */
+:root{
+  --bg:#fbfaf6; --fg:#1f2420; --muted:#5e665f; --line:#d9ddd3; --panel:#f1f3ec;
+  --accent:#4f6d3a; --accent-ink:#ffffff; --gate:#9a5b1e; --gate-bg:#f6e9d8;
+  --ok:#3f7a4a; --warn:#b4762a; --code-bg:#eef0e9;
+  --sans:"Source Sans 3",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#15181a; --fg:#e6e8e3; --muted:#9aa39a; --line:#2d3330; --panel:#1c2124;
+  --accent:#9bbd7a; --accent-ink:#121612; --gate:#e0a460; --gate-bg:#2a2118;
+  --ok:#8fc79a; --warn:#e0a460; --code-bg:#1b1f22; color-scheme:dark } }
+:root[data-theme="dark"]{
+  --bg:#15181a; --fg:#e6e8e3; --muted:#9aa39a; --line:#2d3330; --panel:#1c2124;
+  --accent:#9bbd7a; --accent-ink:#121612; --gate:#e0a460; --gate-bg:#2a2118;
+  --ok:#8fc79a; --warn:#e0a460; --code-bg:#1b1f22; color-scheme:dark }
+
+body{background:var(--bg);color:var(--fg);font-family:var(--sans);font-size:17px;line-height:1.55;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 64px}
+.wrap{max-width:1180px;margin:0 auto;display:grid;grid-template-columns:1fr;gap:0 48px}
+@media (min-width:1000px){.wrap{grid-template-columns:220px minmax(0,1fr)}}
+nav.toc{display:none}
+@media (min-width:1000px){nav.toc{display:block;position:sticky;top:24px;align-self:start;padding-top:40px;font-size:14px}
+  nav.toc a{display:block;color:var(--muted);text-decoration:none;padding:3px 0;border-left:2px solid var(--line);padding-left:10px}
+  nav.toc a:hover{color:var(--fg);border-color:var(--accent)}}
+main{min-width:0;max-width:820px}
+header{padding-top:40px;padding-bottom:12px;border-bottom:1px solid var(--line);margin-bottom:28px}
+.eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+h1{font-size:40px;line-height:1.1;margin:8px 0 10px;font-weight:700;text-wrap:balance}
+h2{font-size:26px;margin:44px 0 12px;font-weight:700;text-wrap:balance;scroll-margin-top:20px}
+h3{font-size:18px;margin:22px 0 8px;font-weight:600}
+p{margin:0 0 12px;max-width:68ch}
+ul,ol{margin:0 0 14px;padding-left:22px;max-width:70ch}
+li{margin:3px 0}
+.lede{font-size:19px;color:var(--muted);max-width:66ch}
+.tldr{background:var(--panel);border-left:4px solid var(--accent);padding:16px 20px;margin:0 0 8px;border-radius:0 6px 6px 0}
+.tldr h2{margin:0 0 8px;font-size:15px;letter-spacing:.08em;text-transform:uppercase;font-family:var(--mono);color:var(--accent)}
+.tldr ul{margin:0;max-width:none}
+code{font-family:var(--mono);font-size:.88em;background:var(--code-bg);padding:1px 5px;border-radius:4px}
+pre{font-family:var(--mono);font-size:13px;line-height:1.5;background:var(--code-bg);padding:14px 16px;border-radius:6px;overflow-x:auto;margin:8px 0 16px}
+pre code{background:none;padding:0;font-size:inherit}
+table{border-collapse:collapse;width:100%;font-size:15px;margin:8px 0 18px}
+.tablewrap{overflow-x:auto;margin:0 0 16px}
+th,td{text-align:left;padding:7px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600}
+td code{white-space:nowrap}
+details{border:1px solid var(--line);border-radius:6px;padding:0 14px;margin:8px 0 16px;background:var(--bg)}
+details summary{cursor:pointer;padding:10px 0;font-weight:600}
+details[open] summary{border-bottom:1px solid var(--line);margin-bottom:10px}
+.flow{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:10px 0 18px}
+.step{padding:7px 12px;border:1px solid var(--line);border-radius:6px;background:var(--panel);font-size:15px;white-space:nowrap}
+.step.gate{background:var(--gate-bg);border-color:var(--gate);color:var(--gate);font-weight:700;font-family:var(--mono);font-size:13px}
+.step.loop{border-style:dashed}
+.arrow{color:var(--muted);font-size:14px}
+.note{font-size:15px;color:var(--muted)}
+.two{display:grid;grid-template-columns:1fr;gap:12px 28px}
+@media (min-width:720px){.two{grid-template-columns:1fr 1fr}}
+.card{border:1px solid var(--line);border-radius:6px;padding:12px 16px;background:var(--panel);min-width:0}
+.card h3{margin:0 0 6px;font-size:16px}
+.card ul{margin:0;padding-left:18px;font-size:15px}
+.q{counter-reset:none}
+.tag{display:inline-block;font-family:var(--mono);font-size:11px;padding:1px 7px;border-radius:10px;background:var(--panel);border:1px solid var(--line);color:var(--muted);vertical-align:middle;margin-left:6px}
+.tag.ok{color:var(--ok);border-color:var(--ok)}
+.tag.warn{color:var(--warn);border-color:var(--warn)}
+a{color:var(--accent)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+@media (prefers-reduced-motion:no-preference){details summary{transition:color .15s}}
+</style>
+
+<div class="wrap">
+<nav class="toc" aria-label="Sections">
+  <a href="#tldr">TL;DR</a>
+  <a href="#scope">Scope</a>
+  <a href="#lifecycle">Lifecycle and gates</a>
+  <a href="#council">Council</a>
+  <a href="#roles">Roles and routing</a>
+  <a href="#files">Files and folders</a>
+  <a href="#state">State file</a>
+  <a href="#stages">Task stages</a>
+  <a href="#review">Review pages</a>
+  <a href="#handoff">Handoffs</a>
+  <a href="#profile">Repo profile</a>
+  <a href="#gotchas">Gotchas</a>
+  <a href="#agents">Agents and runners</a>
+  <a href="#tests">Tests</a>
+  <a href="#worktree">Worktrees</a>
+  <a href="#mod">Dashboard mod</a>
+  <a href="#setup">Setup and config</a>
+  <a href="#build">Build order</a>
+  <a href="#open">Open questions</a>
+</nav>
+
+<main>
+<header>
+  <div class="eyebrow">Design · v0 · 2026-10-20 · Nodman/moot</div>
+  <h1>Moot Plugin Design</h1>
+  <p class="lede">A standalone Claude Code plugin for bigger engineering tasks. Debate the design first with a multi-model council, then ship it as small stacked PRs, with every step visible to the human.</p>
+</header>
+
+<section class="tldr" id="tldr">
+  <h2>TL;DR</h2>
+  <ul>
+    <li><strong>One idea:</strong> no code before the council, the spec, and the plan have each passed a human GO. Then one GO per PR.</li>
+    <li><strong>Council</strong> runs up to five rounds: proposals, swap and judge, then contested points only. Output is one verdict file with a TL;DR on top.</li>
+    <li><strong>Roles, not models.</strong> Eight roles in one editable table decide which runner and model do what. Agents never talk to each other, only to the lead.</li>
+    <li><strong>One state file per piece of work</strong> drives the handoff, the dashboard, the links, and the context warning.</li>
+    <li><strong>Review pages</strong> for verdict, spec, and plan: Artifact page plus local HTML, TL;DR first, tests collapsed, no diagrams that need decoding.</li>
+    <li><strong>Generic by design.</strong> Nothing company specific. Repo facts live in a repo profile written at setup and kept fresh by the review stage.</li>
+    <li><strong>Codex is optional.</strong> Runs headless, shown live in a tmux pane through <code>codex resume</code>. A Claude-only council works out of the box.</li>
+  </ul>
+</section>
+
+<h2 id="scope">Scope</h2>
+<div class="two">
+  <div class="card"><h3>Moot does</h3><ul>
+    <li>Take an epic as tickets, a PRD, or a description with designs.</li>
+    <li>Run council, spec, plan with human gates and review pages.</li>
+    <li>Split the work into tickets and small stacked PRs.</li>
+    <li>Run each PR through brief, implement, verify, review, evidence, draft PR.</li>
+    <li>Keep state, handoffs, gotchas, and a dashboard pane.</li>
+    <li>Quick mode for a single ticket or fix, same stages, no council.</li>
+  </ul></div>
+  <div class="card"><h3>Moot does not</h3><ul>
+    <li>Run unattended. No autonomous mode, no board.</li>
+    <li>Merge. The human merges; an optional merge skill helps with triage and chain rebase.</li>
+    <li>Know your repo. Build, test, run, and screenshot commands come from the repo profile.</li>
+    <li>Define test style. Only the TDD loop and the gates are generic.</li>
+    <li>Ship a status line. The dashboard is a mod pane.</li>
+  </ul></div>
+</div>
+
+<h2 id="lifecycle">Lifecycle and gates</h2>
+<p>Full ceremony, for an epic:</p>
+<div class="flow">
+  <span class="step">Intake</span><span class="arrow">→</span>
+  <span class="step">Factpack</span><span class="arrow">→</span>
+  <span class="step loop">Council ×1–5</span><span class="arrow">→</span>
+  <span class="step gate">GO 1</span><span class="arrow">→</span>
+  <span class="step loop">Spec + judge</span><span class="arrow">→</span>
+  <span class="step gate">GO 2</span><span class="arrow">→</span>
+  <span class="step loop">Plan + judge</span><span class="arrow">→</span>
+  <span class="step gate">GO 3</span><span class="arrow">→</span>
+  <span class="step">Tickets</span>
+</div>
+<p>Then for each PR in plan order:</p>
+<div class="flow">
+  <span class="step gate">GO</span><span class="arrow">→</span>
+  <span class="step">Brief</span><span class="arrow">→</span>
+  <span class="step">Implement</span><span class="arrow">→</span>
+  <span class="step">Verify</span><span class="arrow">→</span>
+  <span class="step loop">Review #n + fixes</span><span class="arrow">→</span>
+  <span class="step">Evidence</span><span class="arrow">→</span>
+  <span class="step">Draft PR</span>
+</div>
+<p>Light ceremony, for a single ticket or fix (<code>/moot:task</code>): research brief by legwork, a one-page plan by the lead, one GO, then the same per-PR stages. No council, no spec.</p>
+<ul>
+  <li><strong>Intake</strong> collects everything a human would look at into <code>assets/</code>: PRD, design exports, screenshots, linked tickets. If a design tool is connected, frames are exported there. The plugin has no Figma dependency.</li>
+  <li><strong>Factpack</strong> is a legwork pass over the repo and the assets: what exists, where, which flags, which screens. Every council member gets it, so they argue about the design, not about the facts.</li>
+  <li><strong>Tickets</strong> are created after GO 3, one per PR, always as local records: the tasks list in <code>state.json</code> plus a <code>tasks/&lt;ID&gt;/</code> folder each. The tracker setting only decides whether that list is mirrored outward.
+    <br>When the epic already has tickets: intake fetches all of them into <code>assets/</code>, so the factpack, the council and the spec treat them as constraints, not as the plan. The plan is still cut by PR size. At GO 3 each PR is mapped to one existing ticket, or marked new. One ticket that needs several PRs keeps its id with a branch suffix (<code>PROJ-124-a</code>, <code>-b</code>), and gets one PR link per PR. The plan judge checks the mapping both ways: every existing ticket is covered by a PR or listed as dropped with a reason, and leftovers are shown to the human at GO 3. The lead never closes or edits a ticket it did not create. If the tickets are already PR-sized, the plan adopts them one to one.</li>
+  <li><strong>GO is literal.</strong> The lead asks "GO for PR 2?" and waits. "Looks fine" or "let's continue" is not a GO. A config switch lets an epic run the whole chain after GO 3 instead.</li>
+  <li><strong>Stops</strong> happen only on a failed verify, a blocking review after two fix rounds, or an agent that needs the human.</li>
+</ul>
+
+<h2 id="council">Council</h2>
+<p>Members are the rows with the council role in the roles table. Each member gets the same brief: the question, the factpack, the assets folder, the report contract. Members must go through every asset and list what they see before they propose.</p>
+<div class="tablewrap"><table>
+  <tr><th>Round</th><th>Input</th><th>Output per member</th></tr>
+  <tr><td>1 Proposals</td><td>Brief, factpack, assets</td><td>One recommended design, rejected alternatives with reasons, file references, asset observations</td></tr>
+  <tr><td>2 Swap and judge</td><td>All other proposals, verbatim</td><td><strong>Agreed</strong> · <strong>Contested</strong> (each point with both positions) · <strong>Revised proposal</strong></td></tr>
+  <tr><td>3 to 5 Contested only</td><td>Only the open points, both positions</td><td>Pick a side or propose a third option, with evidence</td></tr>
+</table></div>
+<p><strong>Stop rule.</strong> The loop ends when the contested list is empty, when a round changes nothing, or after three contested rounds. Whatever is left, the lead decides with written reasoning and marks "lead-decided" so the human can override it.</p>
+<p><strong>Verdict file.</strong> <code>council/verdict.md</code>: TL;DR, the one design, settled points, lead-decided points, rejected alternatives, risks, a coarse work split, who argued what. The human's override box is prepended on top. The verdict is the only thing the council produces, and it is the input to the spec.</p>
+<p class="note">Codex members run headless and keep their session across rounds through <code>codex exec resume</code>. Claude members are subagents resumed by name. A member that dies is dropped and reported; with one member left the council degrades to a deep brainstorm and says so. Without codex the default is exactly that: one Claude member at high effort running the deep brainstorm, not two Claude members on different models.</p>
+
+<h2 id="roles">Roles and routing</h2>
+<p>One markdown table in <code>.moot/roles.md</code>, edited by hand. The lead reads it before every spawn and passes the model explicitly. Values below are example defaults that setup fills in.</p>
+<div class="tablewrap"><table>
+  <tr><th>Role</th><th>Does</th><th>Never</th><th>Runner · model · effort</th></tr>
+  <tr><td>lead</td><td>The session. Frames, spawns, merges verdicts, writes spec and plan, commits, keeps state</td><td>Big implementation work</td><td>the session itself</td></tr>
+  <tr><td>council</td><td>Proposes and argues design, read-only</td><td>Edit files</td><td>claude fable · high; codex gpt · high</td></tr>
+  <tr><td>judge</td><td>Scores a spec or plan against criteria, pass or fail with findings</td><td>Write the thing it judges</td><td>claude fable · high</td></tr>
+  <tr><td>executor</td><td>Implements one PR in the worktree, code and tests, reports to a file</td><td>Open PRs, message other agents</td><td>claude opus · xhigh</td></tr>
+  <tr><td>reviewer</td><td>Reviews the diff before the PR, compares to design, writes the test keep/merge/delete list</td><td>Fix code</td><td>claude fable · high</td></tr>
+  <tr><td>qa</td><td>Runs the app, before and after captures, compares to design</td><td>Judge design</td><td>claude opus · high</td></tr>
+  <tr><td>legwork</td><td>Factpack, repo inspection, comment triage, inventories</td><td>Decisions</td><td>claude sonnet · medium</td></tr>
+  <tr><td>advisor</td><td>Answers one question from any role, read-only</td><td>Spawn anything</td><td>claude fable · high</td></tr>
+</table></div>
+<p><strong>Advisor routing.</strong> An agent that needs help writes the question in its report and stops. The lead asks the advisor, then sends the answer back. Agents never message each other; that line is in every charter.</p>
+<p><strong>Banned models</strong> are a separate list in the same file. The lead refuses to spawn them even if asked.</p>
+
+<h2 id="files">Files and folders</h2>
+<div class="two">
+<div>
+<h3>Repo side, git-ignored</h3>
+<pre><code>.moot/
+  config.json          tracker, merge policy, gates, thresholds
+  roles.md             the roles table + banned models
+  repo.md              repo profile (how to build, test, run, capture)
+  gotchas/             one file per topic
+    index.md           one line per topic file
+    git.md
+    tests.md
+    build.md
+    …
+  work/&lt;ID&gt;/           one per epic or quick task
+    state.json
+    assets/
+    factpack.md
+    council/
+      r1-&lt;member&gt;.md  r2-&lt;member&gt;.md  …  verdict.md
+    spec.md  spec.html
+    plan.md  plan.html
+    handoffs/handoff-2026-10-20-1432.md
+    tasks/&lt;ID&gt;/         always local; ID is the tracker id when mirrored
+      brief.md  executor-report.md
+      review-1.md  review-2.md
+      evidence/  before.png  after.png  report.html
+      pr-body.md</code></pre>
+</div>
+<div>
+<h3>Plugin side</h3>
+<pre><code>moot/
+  .claude-plugin/plugin.json
+  .claude-plugin/marketplace.json
+  skills/
+    setup  epic  task  council  spec  plan
+    pr  resume  handoff  merge
+    routing  gotchas  tdd  debugging
+  agents/
+    council-member  spec-judge  plan-judge
+    executor  reviewer  qa  legwork  advisor
+  templates/
+    brief, verdict, spec, plan, handoff,
+    pr-body, evidence-report, page shell
+  scripts/
+    codex-run.sh   render-page.sh
+    chain-rebase.sh
+    moot-state.sh  moot-note.sh     all writes under .moot/ go through these
+  hooks/
+    hooks.json  session-start.sh
+    register.tsx   (the dashboard mod)</code></pre>
+</div>
+</div>
+<p class="note">Working files live in the main checkout, never in the worktree, so they survive worktree removal. Setup asks where to ignore <code>.moot/</code>: project <code>.gitignore</code>, <code>.git/info/exclude</code>, or the global ignore file.</p>
+
+<h2 id="state">State file</h2>
+<p>One <code>state.json</code> per piece of work. The lead is the only writer and writes it with the Write or Edit tool, so the dashboard can re-read it the moment it changes. Everything else is derived from it.</p>
+<details><summary>Example <code>state.json</code> for an epic in execution</summary>
+<pre><code>{
+  "id": "PROJ-123",
+  "kind": "epic",
+  "title": "Subscription rules visibility",
+  "ceremony": "full",
+  "phase": "execute",
+  "gates": { "council": "2026-10-20T14:01Z", "spec": "2026-10-20T16:20Z", "plan": "2026-10-21T10:05Z" },
+  "council": { "status": "done", "round": 3, "contested": 0,
+               "members": ["claude-fable", "codex-gpt"] },
+  "spec":    { "status": "approved", "judgeRounds": 2 },
+  "plan":    { "status": "approved", "judgeRounds": 1 },
+  "tasks": [
+    { "id": "PROJ-124", "order": 1, "title": "Add the rules hint card",
+      "branch": "proj-124-rules-hint", "base": "main", "pr": 16801,
+      "go": "2026-10-21T10:30Z",
+      "stages": [
+        { "name": "brief",                "status": "done" },
+        { "name": "implement",            "status": "done" },
+        { "name": "verify",               "status": "done" },
+        { "name": "review #1",            "status": "done" },
+        { "name": "fixes after review #1","status": "active" },
+        { "name": "review #2",            "status": "pending" },
+        { "name": "evidence",             "status": "pending" },
+        { "name": "draft PR",             "status": "pending" }
+      ] },
+    { "id": "PROJ-125", "order": 2, "title": "Open the rules sheet from the hint",
+      "branch": "proj-125-rules-sheet", "base": "proj-124-rules-hint", "pr": null, "go": null,
+      "stages": [] }
+  ],
+  "agents": [
+    { "name": "executor-124", "role": "executor", "runner": "claude", "model": "opus",
+      "status": "running", "startedAt": "2026-10-21T11:02Z", "endedAt": null,
+      "report": "tasks/PROJ-124/executor-report.md" },
+    { "name": "codex-gpt", "role": "council", "runner": "codex", "model": "gpt",
+      "status": "done", "codexSessionId": "01a15584-…", "pane": "%171",
+      "report": "council/r3-codex-gpt.md" }
+  ],
+  "links": [
+    { "label": "Verdict",        "url": "https://claude.ai/artifact/…" },
+    { "label": "Spec page",      "url": "https://claude.ai/artifact/…", "path": "spec.html" },
+    { "label": "Plan page",      "url": "https://claude.ai/artifact/…", "path": "plan.html" },
+    { "label": "PR #16801",      "url": "https://github.com/…/pull/16801" },
+    { "label": "Latest handoff", "path": "handoffs/handoff-2026-10-21-1140.md" }
+  ],
+  "worktree": "/Users/me/.claude/worktrees/proj-123",
+  "contextWarnTokens": 350000,
+  "updatedAt": "2026-10-21T11:40Z"
+}</code></pre>
+</details>
+<ul>
+  <li><code>phase</code> is one of intake, council, spec, plan, execute, done.</li>
+  <li><code>stages</code> is a list, not an enum, so dynamic entries like "review #2" or "fixes after review #1" are ordinary rows.</li>
+  <li><code>agents</code> keeps finished agents. Codex agents carry the session id and pane; context usage is not available for them.</li>
+  <li><code>links</code> is what the dashboard shows under Links and what the handoff lists at the top.</li>
+</ul>
+
+<h2 id="stages">Task stages</h2>
+<p>Default stages for one PR, in order. The lead appends dynamic ones as they happen.</p>
+<div class="tablewrap"><table>
+  <tr><th>Stage</th><th>Who</th><th>Done when</th></tr>
+  <tr><td>GO</td><td>human</td><td>A literal GO for this PR</td></tr>
+  <tr><td>brief</td><td>lead</td><td><code>brief.md</code> written: scope, files, test behaviors, repo rules that apply, the "write your report to this file" line</td></tr>
+  <tr><td>implement</td><td>executor</td><td>Report written, diff present in the worktree branch</td></tr>
+  <tr><td>verify</td><td>lead</td><td>Lead reads the full diff, runs the repo profile's test, type, and lint commands one after another, commits</td></tr>
+  <tr><td>review #n</td><td>reviewer</td><td>Findings file with a test keep/merge/delete list; "clean" or "blocking"</td></tr>
+  <tr><td>fixes after review #n</td><td>executor</td><td>Only when blocking; fixes are committed, then review #n+1. Two rounds max before the lead stops and asks</td></tr>
+  <tr><td>evidence</td><td>qa</td><td>Before and after captures when the repo profile has a capture command and the PR touches UI; design, before and after side by side, deltas written against the design; <code>report.html</code>. The reviewer gets the report link, not the images</td></tr>
+  <tr><td>draft PR</td><td>lead</td><td>Stacked on the previous branch, body from the template, evidence report linked, state and links updated</td></tr>
+</table></div>
+
+<h2 id="review">Review pages</h2>
+<p>Verdict, spec, and plan each exist twice: the markdown the agents work on, and a page a human can read in two minutes.</p>
+<ul>
+  <li><strong>TL;DR first.</strong> Every page starts with a short block: what, why, what changed since the last version, what needs a decision.</li>
+  <li><strong>Structure the renderer understands.</strong> Fixed section names in the markdown template. Sections named Tests collapse by default. Decisions and open questions get their own blocks. Relations and flows are tables and cards, never diagrams that need decoding.</li>
+  <li><strong>Where it lives.</strong> <code>render-page.sh</code> turns the markdown into a local HTML file next to it. The lead publishes the same page with the Artifact tool and stores the URL in the links list. Comments reach the lead only when the reviewer sends them to Claude on the page, and only while the session that published the page is alive; a new session re-watches the page from the links list and reads the rest on request.</li>
+  <li><strong>Judges read the markdown</strong>, humans read the page. Same content, two surfaces.</li>
+  <li><strong>The plan page is a PR list.</strong> The primary view is the ordered list of PRs, one row each with branch, base, scope, and ticket (an existing id or "new"). A row expands to its files, behaviours to test, and the brief. The long form stays in <code>plan.md</code> for the judge and the executor.</li>
+</ul>
+<p>This document is the first page of that kind. If it reads well, the template is the shape of this page.</p>
+
+<h2 id="handoff">Handoffs and session hygiene</h2>
+<ul>
+  <li>A handoff is written at session end and whenever the lead crosses the context threshold. Files are timestamped, <code>handoff-YYYY-MM-DD-HHMM.md</code>, newest wins, and the state file points to the latest. Older files are the history, so there is no separate ledger.</li>
+  <li>A handoff starts with "START HERE": the next action, the open GO, the links, then what happened and why.</li>
+  <li>The session start hook finds the latest handoff for the current work and injects its top section plus the GO rule.</li>
+  <li>The lead shuts down every agent it will not message again, right after reading its report. The dashboard lists agents that finished but are still alive.</li>
+  <li>Every agent writes its result to a file and replies "written + N lines". The lead reads the file, never the message.</li>
+  <li>Context threshold is a number in config. The mod warns at that point and the lead writes a handoff and suggests a fresh session. This is the primary stop: the lead should finish on the alert, not run into compaction.</li>
+  <li>Fallback for compaction: when compaction is about to happen before the alert was acted on, the PreCompact hook blocks it once and shows you "ask the lead for a handoff first". The hook cannot talk to the model, so you relay it. The second attempt goes through. Compaction is never the normal path.</li>
+</ul>
+
+<h2 id="profile">Repo profile</h2>
+<p>Setup spawns a legwork agent that inspects the repo and writes <code>.moot/repo.md</code>. The human reviews it once. It holds:</p>
+<ul>
+  <li>install, build, test, type check, lint, codegen commands, and what must run after a checkout or rebase</li>
+  <li>how to launch the app and how to capture a screenshot of a screen, if the repo can</li>
+  <li>worktree setup command, merge policy (squash or merge), PR template path, ticket prefix, main branch</li>
+  <li>pointers to the repo's own rules: instructions files, test style, skills</li>
+  <li>tracker mirror, if the repo has a connected tracker: the skill or command for create ticket, fetch ticket, attach PR link. When these are found, setup sets <code>tracker</code> to repo; otherwise it stays none</li>
+</ul>
+<p>Keeping it fresh: executor and qa reports have a field "profile wrong or incomplete". The lead updates the profile during the verify stage when that field is filled.</p>
+
+<h2 id="gotchas">Gotchas</h2>
+<p>One file per topic under <code>.moot/gotchas/</code> and an index with one line per file. The session start hook loads the index only. Each stage names the topics it needs: the merge skill loads the git topic, the executor brief includes the topics for the files it touches. A gotcha is appended the moment something bites, by the lead, in the same session.</p>
+
+<h2 id="agents">Agents and runners</h2>
+<p>An agent file is a charter the lead spawns with one line. It carries the role's job, its hard limits as a tools list, the report contract, and <code>model: inherit</code>. The lead passes the model from the roles table. Skills drive the lead through a phase; agents are the workers inside the phase.</p>
+<div class="tablewrap"><table>
+  <tr><th>Agent</th><th>Carries</th></tr>
+  <tr><td>council-member</td><td>Asset inspection duty, proposal format, round 2 and contested formats</td></tr>
+  <tr><td>spec-judge, plan-judge</td><td>Criteria lists; plan-judge also checks every requirement maps to a test behavior and that no test code is in the plan</td></tr>
+  <tr><td>executor</td><td>TDD loop, red first, planned tests only, no comments policy slot from the repo, "ask through the lead", report format with the profile-feedback field</td></tr>
+  <tr><td>reviewer</td><td>Review checklist, compare to design, test keep/merge/delete list, clean or blocking, no manufactured findings</td></tr>
+  <tr><td>qa</td><td>Launch and capture using the profile, compare to design, evidence report</td></tr>
+  <tr><td>legwork</td><td>Factpack and inspection formats, read-only</td></tr>
+  <tr><td>advisor</td><td>One question in, one answer out, read-only</td></tr>
+</table></div>
+<h3>Codex runner</h3>
+<p><code>codex-run.sh</code> spawns codex headless in the main checkout, read-only sandbox, report through <code>-o</code>, images through <code>-i</code>. It reads the session id from the first event, prints it, and opens a tmux split pane running <code>codex resume &lt;id&gt;</code> so the real codex UI shows the run. A sentinel file marks the end. No custom stream renderer. The pane is a viewer of the saved session, not a live attach: it shows the finished turn in full, and typing into it starts the next turn on the same session. Codex sees its prompt file plus the repo's own AGENTS.md, so the runner puts the agent charter and any named skill text at the top of the prompt. Later rounds use <code>codex exec resume &lt;id&gt;</code>, which takes the sandbox as <code>-c sandbox_mode=…</code>, not <code>-s</code>.</p>
+<p class="note">Spawn-time rule for Claude agents: the lead sets the model explicitly on every spawn. Omitting it inherits the session model, which is the expensive one.</p>
+
+<h2 id="tests">Tests</h2>
+<p>The plugin carries only the discipline, never the style. Style belongs to the repo and is read from its own rules.</p>
+<ul>
+  <li><strong>Plan gate.</strong> The plan lists test behaviors, one line each. The plan judge rejects any line that cannot name the production change that would make it fail. No test code in plans.</li>
+  <li><strong>Executor loop.</strong> Red first: write the test, run it, see it fail, then implement. Only planned tests, plus temporary ones deleted before the PR.</li>
+  <li><strong>Reviewer list.</strong> Keep, merge, or delete for every test in the diff, with the breaking change named for each keep. Delete is a normal outcome.</li>
+  <li><strong>Two numbers in the PR body.</strong> Tests added versus deleted, and test lines versus production lines. A signal, not a rule.</li>
+</ul>
+
+<h2 id="worktree">Worktrees</h2>
+<p>One worktree per piece of work, created with Claude Code's built-in worktree support: it lives at <code>&lt;repo&gt;/.claude/worktrees/&lt;name&gt;</code> on branch <code>worktree-&lt;name&gt;</code>, cut from the remote default branch. The repo profile's setup command runs inside it after creation. Stacked branches are created with git inside the same worktree, and the worktree stays open until the whole stack is merged, since reusing a name whose branch was merged resets it. A config switch turns worktrees off for repos where they do not work.</p>
+<p><strong>Working files stay in the main checkout, written through scripts.</strong> A session inside a built-in worktree cannot use Write or Edit on a path in the main checkout, but Bash and Read work there (verified 2026-10-20). So every write under <code>.moot/</code> goes through a plugin script run with Bash: <code>moot-state.sh</code> merges fields into <code>state.json</code>, <code>moot-note.sh</code> appends a handoff or a gotcha. Reads use Read with the absolute path from the repo root. The dashboard reloads when it sees a Bash call that names <code>.moot/</code>, plus a slow timer.</p>
+
+<h2 id="mod">Dashboard mod</h2>
+<p>A pane beside the transcript, opened with <code>/moot:dash</code>. It reads the state file and redraws when the lead's state script runs; a slow timer covers codex-side changes. Shape borrowed from the flightdeck mod, cut to about a third of its size.</p>
+<div class="two">
+  <div class="card"><h3>Shows</h3><ul>
+    <li>Work id and title, ceremony, phase</li>
+    <li>Council: in progress round N, or done; spec and plan with judge rounds; which gates passed</li>
+    <li>Current task: the stage list as a checklist, dynamic rows included</li>
+    <li>Agents: lead with context percent; every other agent with role, status, context where known; finished ones kept</li>
+    <li>Links: every entry in the links list</li>
+    <li>A warning line when the lead's context crosses the threshold</li>
+  </ul></div>
+  <div class="card"><h3>Does not</h3><ul>
+    <li>Attach to or open agent panes</li>
+    <li>Show cost, permissions, or tool logs</li>
+    <li>Replace the status line</li>
+    <li>Run anything</li>
+  </ul></div>
+</div>
+<p class="note">Per-agent context for Claude subagents comes only from turn events, so the mod must be loaded from session start. Codex context is not available and shows as n/a. The mod's own memory is cleared on resume, clear and branch, so it re-reads the state file on every session start. The state file path is absolute, from the repo root, so a session inside a worktree still finds it.</p>
+
+<h2 id="setup">Setup and config</h2>
+<p><code>/moot:setup</code> creates <code>.moot/</code>, writes the roles table with defaults, asks the ignore question, checks tools (gh required, codex and tmux optional), runs the repo inspection, and ends with the profile open for review.</p>
+<p><code>config.json</code> is written once by setup: defaults plus what the inspection found (main branch, merge policy, ticket prefix come from the profile). After that you edit it by hand, like <code>roles.md</code>. Every skill reads it at start; nothing in the flow writes it back. Runtime values live in <code>state.json</code>.</p>
+<details><summary>Example <code>config.json</code> and what each key affects</summary>
+<pre><code>{
+  "tracker": "none",                 // none | github | repo
+  "ticketPrefix": "PROJ",
+  "mainBranch": "main",
+  "merge": "squash",                 // squash | merge, from the repo profile
+  "goPerPr": true,
+  "worktree": { "enabled": true, "setup": "npm ci" },
+  "council": { "maxContestedRounds": 3 },
+  "contextWarnTokens": 350000,
+  "pages": "artifact",               // artifact | local
+  "evidence": { "capture": "" }      // repo command: &lt;route&gt; &lt;out.png&gt;; empty = skip captures
+}</code></pre>
+<table>
+<thead><tr><th>Key</th><th>Affects</th></tr></thead>
+<tbody>
+<tr><td><code>tracker</code></td><td>The local tasks record always exists. This key decides whether it is mirrored outward and where ids come from. none: no mirror, ids minted from <code>ticketPrefix</code>. github: each task mirrored as a gh issue. repo: mirrored through the commands or skill the repo profile names (for example a connected Jira CLI). The mirror is three operations: create a task and record the external id back into <code>state.json</code>, fetch an existing ticket into <code>assets/</code> at intake, attach the PR link after the draft PR. When mirrored, the external id becomes the task id, so branches and folders match the tracker. If the mirror fails, the local record stays the truth and the lead reports it instead of stopping. Moot carries no tracker client of its own.</td></tr>
+<tr><td><code>ticketPrefix</code>, <code>mainBranch</code></td><td>Ids of new tasks when there is no mirror, and the base branch of the first PR in a stack.</td></tr>
+<tr><td><code>merge</code></td><td>How the merge skill and <code>chain-rebase.sh</code> treat a merged parent (squash vs merge commit).</td></tr>
+<tr><td><code>goPerPr</code></td><td>true: the lead asks GO before every PR. false: one GO at GO 3 runs the whole chain, stopping only on a failed verify, a blocking review after two fix rounds, or an agent asking for the human.</td></tr>
+<tr><td><code>worktree</code></td><td>Whether the epic gets its own worktree, and the command run inside it after creation.</td></tr>
+<tr><td><code>council.maxContestedRounds</code></td><td>The stop rule for contested rounds 3 to 5.</td></tr>
+<tr><td><code>contextWarnTokens</code></td><td>When the dashboard warns and the lead writes a handoff. Copied into <code>state.json</code> so the mod reads one file.</td></tr>
+<tr><td><code>pages</code></td><td>artifact: publish spec and plan pages with the Artifact tool and store the URL in links. local: HTML file only.</td></tr>
+<tr><td><code>evidence.capture</code></td><td>The before and after step in qa. Empty means captures are skipped and qa only compares to the design.</td></tr>
+</tbody>
+</table>
+</details>
+
+<h2 id="build">Build order</h2>
+<ol>
+  <li>This design page, reviewed and verified <span class="tag ok">done 2026-10-20</span>: one codex and one Claude red-team pass over the tool claims, plus three spikes (dashboard mod, PreCompact hook, worktree isolation). Findings are folded into the sections above.</li>
+  <li>Setup and repo profile</li>
+  <li>State file, handoffs, session start hook</li>
+  <li>Council skill, council-member charter, codex runner</li>
+  <li>Spec and plan skills, judges, page renderer, Artifact publish</li>
+  <li>Task loop: brief, executor, verify, reviewer, qa, draft PR</li>
+  <li>Dashboard mod</li>
+  <li>Merge skill, optional</li>
+</ol>
+<p>Dogfood on the next real epic under full ceremony before polishing. Quick mode and the mod mature on that run.</p>
+
+<h2 id="open">Open questions</h2>
+<p>None. The five questions from the first review were answered on 2026-10-20 and folded into Council, Task stages, Review pages, Handoffs, and Setup and config.</p>
+</main>
+</div>

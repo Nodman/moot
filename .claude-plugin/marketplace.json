@@ -1,0 +1,17 @@
+{
+  "name": "moot-marketplace",
+  "metadata": {
+    "description": "Single-plugin marketplace for moot, the council-first delivery workflow for Claude Code."
+  },
+  "owner": {
+    "name": "Dmytro Burmistrov",
+    "url": "https://github.com/Nodman"
+  },
+  "plugins": [
+    {
+      "name": "moot",
+      "source": "./",
+      "description": "Debate the design with a multi-model council, pass human gates for council, spec and plan, then ship small stacked PRs with review and evidence."
+    }
+  ]
+}

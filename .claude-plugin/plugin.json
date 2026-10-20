@@ -1,0 +1,10 @@
+{
+  "name": "moot",
+  "version": "0.1.0",
+  "description": "Council-first delivery workflow for bigger engineering tasks: multi-model design debate, spec and plan with human gates, then small stacked PRs with review and evidence. Generic; repo facts live in a profile written at setup.",
+  "author": {
+    "name": "Dmytro Burmistrov"
+  },
+  "license": "MIT",
+  "repository": "https://github.com/Nodman/moot"
+}
