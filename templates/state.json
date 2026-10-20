@@ -1,0 +1,17 @@
+{
+  "id": "",
+  "kind": "epic",
+  "title": "",
+  "ceremony": "full",
+  "phase": "intake",
+  "gates": { "council": null, "spec": null, "plan": null },
+  "council": { "status": "pending", "round": 0, "contested": 0, "members": [] },
+  "spec": { "status": "pending", "judgeRounds": 0 },
+  "plan": { "status": "pending", "judgeRounds": 0 },
+  "tasks": [],
+  "agents": [],
+  "links": [],
+  "worktree": null,
+  "contextWarnTokens": 350000,
+  "updatedAt": null
+}

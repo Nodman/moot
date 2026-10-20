@@ -250,7 +250,7 @@ a{color:var(--accent)}
 <p class="note">Working files live in the main checkout, never in the worktree, so they survive worktree removal. Setup asks where to ignore <code>.moot/</code>: project <code>.gitignore</code>, <code>.git/info/exclude</code>, or the global ignore file.</p>
 
 <h2 id="state">State file</h2>
-<p>One <code>state.json</code> per piece of work. The lead is the only writer and writes it with the Write or Edit tool, so the dashboard can re-read it the moment it changes. Everything else is derived from it.</p>
+<p>One <code>state.json</code> per piece of work. The lead is the only writer and writes it through <code>moot-state.sh</code> (init, merge, jq), so a session inside a worktree can still write it and the dashboard re-reads it the moment the script runs. Everything else is derived from it.</p>
 <details><summary>Example <code>state.json</code> for an epic in execution</summary>
 <pre><code>{
   "id": "PROJ-123",
