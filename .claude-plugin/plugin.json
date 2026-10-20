@@ -6,5 +6,6 @@
     "name": "Dmytro Burmistrov"
   },
   "license": "MIT",
-  "repository": "https://github.com/Nodman/moot"
+  "repository": "https://github.com/Nodman/moot",
+  "types": "./types/index.d.ts"
 }

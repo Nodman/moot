@@ -22,3 +22,10 @@ Then in a repository:
 
 Setup creates a git-ignored `.moot/` folder with the config, the roles table,
 a gotchas index, and a repo profile written by an inspection agent.
+
+## Commands
+
+- `/moot:epic`, `/moot:task`: start or continue work under full or light ceremony.
+- `/moot:council`, `/moot:spec`, `/moot:plan`, `/moot:pr`: the phases, run by the two above.
+- `/moot:resume`, `/moot:handoff`: session start and session end.
+- `/moot-dash [open|close|reload]`: the dashboard pane. It opens by itself when the repo has current moot work.

@@ -82,7 +82,7 @@ marked `unknown`). Then print the next steps:
 
 - `/moot:epic` for an epic with council, spec, plan and stacked PRs.
 - `/moot:task` for a single ticket or fix.
-- `/moot:dash` for the dashboard pane.
+- `/moot-dash` for the dashboard pane.
 
 Re-running setup is safe: existing files are kept, the ignore step is
 skipped when already done, and only the profile asks before a refresh.

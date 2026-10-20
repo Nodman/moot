@@ -96,7 +96,7 @@ a{color:var(--accent)}
 
 <main>
 <header>
-  <div class="eyebrow">Design · v0 · 2026-10-20 · Nodman/moot</div>
+  <div class="eyebrow">Design · v1 · 2026-10-21 · Nodman/moot</div>
   <h1>Moot Plugin Design</h1>
   <p class="lede">A standalone Claude Code plugin for bigger engineering tasks. Debate the design first with a multi-model council, then ship it as small stacked PRs, with every step visible to the human.</p>
 </header>
@@ -388,7 +388,7 @@ a{color:var(--accent)}
 <p><strong>Working files stay in the main checkout, written through scripts.</strong> A session inside a built-in worktree cannot use Write or Edit on a path in the main checkout, but Bash and Read work there (verified 2026-10-20). So every write under <code>.moot/</code> goes through a plugin script run with Bash: <code>moot-state.sh</code> merges fields into <code>state.json</code>, <code>moot-note.sh</code> appends a handoff or a gotcha. Reads use Read with the absolute path from the repo root. The dashboard reloads when it sees a Bash call that names <code>.moot/</code>, plus a slow timer.</p>
 
 <h2 id="mod">Dashboard mod</h2>
-<p>A pane beside the transcript, opened with <code>/moot:dash</code>. It reads the state file and redraws when the lead's state script runs; a slow timer covers codex-side changes. Shape borrowed from the flightdeck mod, cut to about a third of its size.</p>
+<p>A pane beside the transcript, opened with <code>/moot-dash</code>. It reads the state file and redraws when the lead's state script runs; a slow timer covers codex-side changes. Shape borrowed from the flightdeck mod, cut to about a third of its size.</p>
 <div class="two">
   <div class="card"><h3>Shows</h3><ul>
     <li>Work id and title, ceremony, phase</li>
@@ -442,12 +442,12 @@ a{color:var(--accent)}
 <h2 id="build">Build order</h2>
 <ol>
   <li>This design page, reviewed and verified <span class="tag ok">done 2026-10-20</span>: one codex and one Claude red-team pass over the tool claims, plus three spikes (dashboard mod, PreCompact hook, worktree isolation). Findings are folded into the sections above.</li>
-  <li>Setup and repo profile</li>
-  <li>State file, handoffs, session start hook</li>
-  <li>Council skill, council-member charter, codex runner</li>
-  <li>Spec and plan skills, judges, page renderer, Artifact publish</li>
-  <li>Task loop: brief, executor, verify, reviewer, qa, draft PR</li>
-  <li>Dashboard mod</li>
+  <li>Setup and repo profile <span class="tag ok">done 2026-10-20</span></li>
+  <li>State file, handoffs, session start hook <span class="tag ok">done 2026-10-20</span></li>
+  <li>Council skill, council-member charter, codex runner <span class="tag ok">done 2026-10-20</span></li>
+  <li>Spec and plan skills, judges, page renderer, Artifact publish <span class="tag ok">done 2026-10-20</span></li>
+  <li>Task loop: brief, executor, verify, reviewer, qa, draft PR <span class="tag ok">done 2026-10-21</span></li>
+  <li>Dashboard mod <span class="tag ok">done 2026-10-21</span></li>
   <li>Merge skill, optional</li>
 </ol>
 <p>Dogfood on the next real epic under full ceremony before polishing. Quick mode and the mod mature on that run.</p>
