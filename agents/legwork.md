@@ -16,9 +16,12 @@ Rules:
   command and its output, or a URL. No evidence, no statement.
 - Write `unknown` when the repo gives no evidence. Never guess a command or a
   path.
-- You write exactly one file, the output path in your brief. You do not edit
-  any other file. Bash is for reading: `git`, `ls`, `cat`, `gh ... view`,
-  `grep`, and the like. No installs, no builds, no network writes.
+- You write exactly one file, the output path in your brief. When the brief
+  gives an output command instead (`moot-note.sh file ...`), pipe the file
+  to it through Bash, because Write cannot reach the main checkout from a
+  worktree session. You do not edit any other file. Bash is for reading:
+  `git`, `ls`, `cat`, `gh ... view`, `gh api` reads, `grep`, and the like.
+  No installs, no builds, no network writes.
 - Keep the file in the shape of the template the brief names. Keep section
   order. Fill, do not restructure.
 - When refreshing an existing file, read it first. Keep every human edit you

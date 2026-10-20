@@ -126,7 +126,7 @@ a{color:var(--accent)}
   </ul></div>
   <div class="card"><h3>Moot does not</h3><ul>
     <li>Run unattended. No autonomous mode, no board.</li>
-    <li>Merge. The human merges; an optional merge skill helps with triage and chain rebase.</li>
+    <li>Merge. The human merges and resolves threads; <code>/moot:merge</code> triages comments, runs fix rounds, and restacks the chain with <code>chain-rebase.sh</code> after each merge.</li>
     <li>Know your repo. Build, test, run, and screenshot commands come from the repo profile.</li>
     <li>Define test style. Only the TDD loop and the gates are generic.</li>
     <li>Ship a status line. The dashboard is a mod pane.</li>
@@ -302,7 +302,7 @@ a{color:var(--accent)}
 }</code></pre>
 </details>
 <ul>
-  <li><code>phase</code> is one of intake, council, spec, plan, execute, done.</li>
+  <li><code>phase</code> is one of intake, council, spec, plan, execute, done, merged.</li>
   <li><code>stages</code> is a list, not an enum, so dynamic entries like "review #2" or "fixes after review #1" are ordinary rows.</li>
   <li><code>agents</code> keeps finished agents. Codex agents carry the session id and pane; context usage is not available for them.</li>
   <li><code>links</code> is what the dashboard shows under Links and what the handoff lists at the top.</li>
@@ -448,7 +448,7 @@ a{color:var(--accent)}
   <li>Spec and plan skills, judges, page renderer, Artifact publish <span class="tag ok">done 2026-10-20</span></li>
   <li>Task loop: brief, executor, verify, reviewer, qa, draft PR <span class="tag ok">done 2026-10-21</span></li>
   <li>Dashboard mod <span class="tag ok">done 2026-10-21</span></li>
-  <li>Merge skill, optional</li>
+  <li>Merge skill and <code>chain-rebase.sh</code> <span class="tag ok">done 2026-10-21</span></li>
 </ol>
 <p>Dogfood on the next real epic under full ceremony before polishing. Quick mode and the mod mature on that run.</p>
 

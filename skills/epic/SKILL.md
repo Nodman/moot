@@ -62,6 +62,6 @@ the chain runs until a stop. After the last draft PR set `phase: done`,
 write a handoff with `/moot:handoff`, and tell the human the list of PR
 urls in merge order and that the worktree stays until the chain is merged.
 
-The human merges. After each squash merge the remaining chain needs a
-rebase onto the main branch before the next PR is reviewed; `/moot:merge`
-does that when it exists, otherwise do it by hand in the worktree.
+The human merges. After each merge the remaining chain needs a rebase
+onto the main branch before the next PR is reviewed; `/moot:merge` does
+that, triages the PR comments, and closes the work after the last merge.
