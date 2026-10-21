@@ -8,7 +8,10 @@ description: Use at the start of a session that continues moot work — reads th
 Scripts live in `${CLAUDE_PLUGIN_ROOT}/scripts/`. The session start hook
 already injected the START HERE section; this skill reads the rest.
 
-1. `moot-state.sh get`. Then read the file named by the "Latest handoff"
+1. `moot-state.sh current <ID>` with the id the human named, else the one
+   the hook reported: this binds the work to this session, so parallel
+   sessions in one checkout never read each other's state. Then
+   `moot-state.sh get` and read the file named by the "Latest handoff"
    link in full with Read. If there is no handoff, say so and read
    `factpack.md`, `spec.md` or `plan.md`, whichever the phase points at.
 2. Agents listed as `running` in the state are gone with the old session.

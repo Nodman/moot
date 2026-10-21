@@ -7,10 +7,9 @@ input="$(cat || true)"
 common="$(git rev-parse --path-format=absolute --git-common-dir 2>/dev/null || true)"
 [[ -n "$common" ]] || exit 0
 moot="$(dirname "$common")/.moot"
-[[ -f "$moot/current" ]] || exit 0
-
 session="$(printf '%s' "$input" | jq -r '.session_id // empty' 2>/dev/null || true)"
 [[ -n "$session" ]] || exit 0
+[[ -f "$moot/sessions/$session" || -f "$moot/current" ]] || exit 0
 mark="$moot/.compact-$session"
 [[ -f "$mark" ]] && exit 0
 

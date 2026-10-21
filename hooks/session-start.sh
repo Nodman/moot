@@ -9,11 +9,16 @@ case "$input" in *'"agent_type"'*) printf '{}'; exit 0 ;; esac   # never into su
 common="$(git rev-parse --path-format=absolute --git-common-dir 2>/dev/null || true)"
 [[ -n "$common" ]] || { printf '{}'; exit 0; }
 moot="$(dirname "$common")/.moot"
-[[ -f "$moot/current" ]] || { printf '{}'; exit 0; }
 
 find "$moot" -maxdepth 1 -name '.compact-*' -mtime +1 -delete 2>/dev/null || true   # old PreCompact markers
+find "$moot/sessions" -type f -mtime +7 -delete 2>/dev/null || true                 # bindings of long-gone sessions
 
-id="$(cat "$moot/current")"
+# This session's own work first, else the last work any session claimed.
+session="$(printf '%s' "$input" | jq -r '.session_id // empty' 2>/dev/null || true)"
+id=""
+[[ -n "$session" && -f "$moot/sessions/$session" ]] && id="$(cat "$moot/sessions/$session")"
+[[ -n "$id" || ! -f "$moot/current" ]] || id="$(cat "$moot/current")"
+[[ -n "$id" ]] || { printf '{}'; exit 0; }
 work="$moot/work/$id"
 state="$work/state.json"
 [[ -f "$state" ]] || { printf '{}'; exit 0; }

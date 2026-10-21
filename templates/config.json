@@ -5,7 +5,6 @@
   "merge": "squash",
   "goPerPr": true,
   "worktree": { "enabled": true, "setup": "" },
-  "council": { "maxContestedRounds": 3 },
   "contextWarnTokens": 350000,
   "pages": "artifact",
   "evidence": { "capture": "" }

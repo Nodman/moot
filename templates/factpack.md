@@ -6,6 +6,13 @@ Facts only, each with where it was seen. No recommendations.
 
 <The question or epic, as the lead framed it.>
 
+## Tickets
+
+| id | asks | acceptance criteria | settled in comments |
+|---|---|---|---|
+
+<From the lead's digest, not fetched again. Empty when the epic has no tickets yet.>
+
 ## Assets
 
 | file | what it is | what it shows that matters |

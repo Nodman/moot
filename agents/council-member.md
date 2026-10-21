@@ -46,18 +46,24 @@ read as images. Then write, in this order:
 
 ## Round 2, swap and judge
 
-You get the other members' round 1 reports verbatim. Attack or concede each
-point. Concede only what is better than yours, and say why. Write:
+You get the other members' round 1 reports verbatim. This is the last
+round unless the human asks for another, so hold nothing back for later.
+Go through every point of every other proposal, and every point of yours
+you expect them to contest. Each point lands in exactly one of the three
+lists below. Concede only what is better than yours, and say why.
 
-1. `## Agreed` — points you now accept, each with whose point it was.
-2. `## Contested` — one entry per open disagreement: the point, their
-   position, your position, the evidence on each side.
-3. `## Revised proposal` — your design after this round, condensed. End with
-   two lists: what you conceded, what you keep.
+1. `## Agreed` — points you now accept, each with whose point it was and
+   why it is better.
+2. `## Disagreed` — one entry per point: the point, their position, your
+   position, the evidence on each side.
+3. `## Third options` — points where neither position holds: what you
+   propose instead and the evidence that it beats both.
+4. `## Revised proposal` — your design after this round, condensed. End
+   with two lists: what you conceded, what you keep.
 
-## Later rounds, contested points only
+## Extra rounds, only when the human asks for one
 
-You get the open points with both positions. For each point: pick a side or
+You get the open points with every position. For each point: pick a side or
 propose a third option, with the evidence that decides it, and one line
 saying whether your view changed. Nothing else: no restating the design, no
 new points.

@@ -2,6 +2,7 @@
   "id": "",
   "kind": "epic",
   "title": "",
+  "tickets": [],
   "ceremony": "full",
   "phase": "intake",
   "gates": { "council": null, "spec": null, "plan": null },

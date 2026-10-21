@@ -6,9 +6,9 @@
 #   moot-state.sh path                print the absolute path of state.json (for Read)
 #   moot-state.sh merge '<json>'      deep-merge an object into the state ('-' reads stdin)
 #   moot-state.sh jq '<filter>'       apply a jq filter that returns the whole new state
-#   moot-state.sh current [<ID>]      print or set the current work id
+#   moot-state.sh current [<ID>]      print or set the current work id (setting binds it to this session)
 #
-# The work id comes from MOOT_ID or .moot/current. Every write sets updatedAt.
+# The work id comes from MOOT_ID, this session's binding, or .moot/current. Every write sets updatedAt.
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib.sh"
 need jq
 
@@ -60,7 +60,7 @@ cmd_init() {
      --argjson warn "$warn" --arg at "$(now_utc)" \
      '.id = $id | .kind = $kind | .ceremony = $ceremony | .title = $title
       | .contextWarnTokens = $warn | .updatedAt = $at'
-  echo "$id" > "$(moot_dir)/current"
+  bind_current "$id"
   echo "$dir/state.json"
 }
 
@@ -76,7 +76,7 @@ cmd_merge() {
 cmd_current() {
   if [[ -n "${1:-}" ]]; then
     [[ -f "$(work_dir "$1")/state.json" ]] || die "no state for $1"
-    echo "$1" > "$(moot_dir)/current"
+    bind_current "$1"
   fi
   current_id
 }

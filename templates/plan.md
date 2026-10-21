@@ -21,7 +21,7 @@
 | ticket | covered by | or dropped because |
 |---|---|---|
 
-<Only when intake fetched tickets into assets/. Every ticket is covered by a PR or dropped with a reason.>
+<Only when state.tickets is not empty. Every ticket is covered by a PR or dropped with a reason.>
 
 ## Global constraints
 

@@ -12,15 +12,16 @@ checkout. Every write under `.moot/` goes through `moot-state.sh` or
 ## 1. Start
 
 Ask for the ticket id (or a short slug) and a title, then `moot-state.sh
-init <ID> --kind task --ceremony light --title "<title>"`. Collect the
-ticket and any screenshot or design into `assets/` the way `/moot:epic`
-does at intake, and write `assets/index.md`.
+init <ID> --kind task --ceremony light --title "<title>"`. Fetch and
+read the ticket the way `/moot:epic` does at intake (its id in
+`state.tickets`, a digest for the brief, no copy on disk), collect any
+screenshot or design into `assets/`, and write `assets/index.md`.
 
 ## 2. Research
 
 Spawn `moot:legwork` with the model from the legwork row, name
-`legwork-<ID>`, background. Brief: the ticket in one paragraph, the assets
-folder, output `research.md`, template
+`legwork-<ID>`, background. Brief: the ticket digest, the assets folder,
+output `research.md`, template
 `${CLAUDE_PLUGIN_ROOT}/templates/factpack.md`, repo rules from
 `.moot/repo.md`. Read the file, shut the agent down, ask the human the
 questions it left.

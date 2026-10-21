@@ -23,6 +23,7 @@ export type MootState = {
   id: string
   kind: string
   title: string
+  tickets: string[]
   ceremony: string
   phase: string
   gates: Record<string, string | null>
@@ -43,6 +44,6 @@ export type LiveAgent = { id: string; name: string; ctx: number; status: string 
 
 declare module 'claude-code' {
   interface PluginState {
-    moot: { dash: Dash; live: LiveAgent[] }
+    moot: { dash: Dash; live: LiveAgent[]; tick: number }
   }
 }

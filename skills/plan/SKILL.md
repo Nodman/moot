@@ -14,8 +14,9 @@ this repo, so paths and names are exact.
 
 `moot-state.sh get` must show `gates.spec` set. Read `spec.md`, the
 Decisions table first. Read `.moot/repo.md` for the main branch, the ticket
-prefix, the merge policy, and the verification commands. List the tickets
-in `assets/`, if intake fetched any. Set `plan.status: running`, `phase:
+prefix, the merge policy, and the verification commands. The existing
+tickets are `state.tickets` with the digest in the factpack; fetch one
+again when the digest is not enough. Set `plan.status: running`, `phase:
 plan`.
 
 ## 2. Cut
@@ -47,8 +48,8 @@ bases correct, nothing too big.
 
 Spawn `moot:plan-judge` with the model from the judge row of
 `.moot/roles.md`, name `plan-judge-<n>`, in the background. Prompt: the
-absolute paths of the plan, the spec, the assets folder, the repo profile,
-and the output file `plan-judge-<n>.md` in the work dir. Add it to
+absolute paths of the plan, the spec, the factpack, the assets folder, the
+repo profile, and the output file `plan-judge-<n>.md` in the work dir. Add it to
 `state.agents[]`. Read the findings file, shut the judge down, mark it done.
 
 On `fail`: fix every finding, bump `plan.judgeRounds`, spawn a fresh judge.
@@ -86,11 +87,13 @@ is the existing ticket id when the PR maps to one.
 For PRs marked `new`, the id depends on `tracker` in `.moot/config.json`:
 
 - `none`: `<ID>-<order>` (for example `PROJ-123-2`).
-- `github`: `gh issue create` with the PR title and its plan section as the
-  body; the id is the issue number.
-- `repo`: the create command the repo profile names; the id is what it
-  returns.
+- `github` or `repo`: show the titles and ask "Create these <n> tickets in
+  <tracker>?" and wait; the plan GO does not cover writes to the tracker.
+  On yes: `gh issue create` with the PR title and its plan section as the
+  body, or the create command the repo profile names; the id is what comes
+  back. On no: local ids as for `none`.
 
-Never close, edit, or re-title a ticket you did not create. Show the final
+Add every created id to `state.tickets`. Never close, edit, or re-title a
+ticket you did not create. Show the final
 task list and say that execution starts with `/moot:epic` at PR 1, one GO
 per PR.

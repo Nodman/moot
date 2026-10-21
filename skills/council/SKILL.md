@@ -1,6 +1,6 @@
 ---
 name: council
-description: Use to run the moot design council on the current epic — independent proposals, a swap-and-judge round, contested rounds, then one verdict file and the first human GO. Heavy and multi-model; run it only when the human asks for it or /moot:epic reaches the council phase.
+description: Use to run the moot design council on the current epic — independent proposals, one swap-and-judge round, then the lead decides the open points with the human, writes one verdict file and asks for the first human GO. Extra rounds only when the human asks. Heavy and multi-model; run it only when the human asks for it or /moot:epic reaches the council phase.
 ---
 
 # /moot:council
@@ -34,6 +34,7 @@ Write `council/brief.md`, identical for every member:
 
 - the question and the success criteria
 - the locked decisions
+- the ticket ids with one line each; the factpack holds the digest
 - repo root, the absolute path of `factpack.md`, the absolute path of
   `assets/` with one line per file in it
 - pointers to the repo's own rules from `.moot/repo.md`
@@ -64,10 +65,11 @@ codex-run.sh run --name <name> --model <model> --effort <effort> \
   --workdir <repo root> [--image <asset> for every image in assets/]
 ```
 
-It prints the session id and the tmux pane. Tell the human the session id
-right away. The pane runs the codex UI on that session; the first time in a
-folder it asks the human to trust it. Record `codexSessionId` and `pane` on
-the agent entry, for example:
+Every path is absolute. It prints the session id and the tmux pane. Tell
+the human the session id right away. The pane shows the live run (commands,
+searches, messages, errors) and closes a few seconds after the run ends;
+without tmux the run is a background process. Record `codexSessionId` and
+`pane` on the agent entry, for example:
 
 ```
 moot-state.sh jq '.agents += [{name: "codex-gpt", role: "council", runner: "codex", model: "gpt",
@@ -75,12 +77,13 @@ moot-state.sh jq '.agents += [{name: "codex-gpt", role: "council", runner: "code
   report: "council/r1-codex-gpt.md"}]'
 ```
 
-Wait. Claude members come back as task notifications. For codex run
-`codex-run.sh wait <report> --timeout 540`; repeat up to three times. On
-`dead` or a third `timeout`: `codex-run.sh kill`, mark the agent `lost`,
-drop the member, tell the human. A codex report with exit code 97 is
-empty, and a Claude member that returns without its report file is lost:
-treat both the same.
+Wait. Claude members come back as task notifications. For each codex
+member run `codex-run.sh wait <report> --timeout 1800` as a background
+Bash call; its result arrives as a notification the same way. On `dead` or
+`timeout`: `codex-run.sh kill <report>`, mark the agent `lost`, drop the
+member, tell the human. A codex report with exit code 97 is empty, and a
+Claude member that returns without its report file is lost: treat both
+the same.
 
 Read every report with Read. Mark the agent `done` on the entry but keep it
 alive; it has another round. When a report has "Questions for the human",
@@ -90,8 +93,9 @@ ask them now and put the answers into the round 2 prompt.
 
 For each member write `council/r2-<name>-prompt.md`: "Round 2. Follow the
 round 2 format in your charter. Below are the other members' round 1
-reports, verbatim." followed by every other report under a heading with its
-author's name, plus any human answers from round 1. Report path:
+reports, verbatim. This is the last round unless the human asks for
+another." followed by every other report under a heading with its author's
+name, plus any human answers from round 1. Report path:
 `council/r2-<name>.md`.
 
 Claude member: SendMessage to the named agent: "Round 2. Read <prompt path>
@@ -101,37 +105,52 @@ and the new out path; no charter, the session has it. Wait and read as in
 round 1. Update `council.round: 2`.
 
 Deep brainstorm (one member): the round 2 prompt is instead "Attack your own
-round 1 proposal as a second member would: list what you would contest,
-then write the three round 2 sections against yourself."
+round 1 proposal as a second member would: list what you would agree with,
+disagree with, or replace by a third option, then write the round 2
+sections against yourself."
 
-Tally: write `council/contested-r2.md` with every point listed under
-Contested by any member, merged where two members name the same point, each
-with both positions. Set `council.contested` to the count.
+## 5. Decide
 
-## 5. Rounds 3 to 5, contested only
+Tally every point from the round 2 reports into `council/tally.md`: one
+row per point, merged where two members name the same point, with each
+member's stance (agreed, disagreed, third option) and the evidence. Then
+sort the rows:
 
-Run another round only while the contested count is above zero, the list
-changed since the previous round, and fewer than `council.maxContestedRounds`
-(from `.moot/config.json`) contested rounds have run. The prompt for every
-member is the contested file: "Round N. For each point pick a side or a
-third option with evidence, and say whether your view changed." Reports go
-to `council/r<N>-<name>.md`; then write `council/contested-r<N>.md` with
-what is still open and update `council.round` and `council.contested`.
+- Settled: every member agrees. No decision needed.
+- Lead-decided: the evidence on one side clearly wins. You decide and write
+  why; the human can override it in the verdict.
+- Human-decided: the evidence is balanced, or the members swapped sides on
+  it. Ask the human now, one AskUserQuestion per point with each position
+  as an option. The answer is settled with source "human".
+
+Set `council.contested` to the number of lead-decided plus human-decided
+points. No further member round runs by default.
+
+Extra round, only when the human asks for one and names the points: write
+`council/contested-r<N>.md` with those points and every position, send it
+to every member as "Round N. For each point pick a side or a third option
+with evidence, and say whether your view changed.", reports to
+`council/r<N>-<name>.md`, then redo the tally for those points. Stop when
+no member changed a view.
 
 ## 6. Verdict
 
 Write `council/verdict.md` from `${CLAUDE_PLUGIN_ROOT}/templates/verdict.md`.
-Points every member accepted are settled. Points still open you decide with
-written reasoning in the lead-decided table, so the human can override each
-one. Keep the human override section on top and empty. Add a "Verdict" link
-with `path: council/verdict.md`, set `council.status: done`.
+Settled points go into the settled table, human answers included with
+"human" as who argued it. Lead-decided points go into the lead-decided table
+with written reasoning, so the human can override each one. Keep the human
+override section on top and empty. Add a "Verdict" link with `path:
+council/verdict.md`, set `council.status: done`. No review page is
+published for the verdict.
 
 Shut down every Claude member now (none is messaged again); mark every
 agent `done` with `endedAt`. Codex sessions keep their ids in the state.
 
 ## 7. GO 1
 
-Show the human the TL;DR, the lead-decided table, and the open points. Ask
-in these words: "GO for the council verdict?" and wait. Only a literal GO
-passes. When the human edits the override section first, read the file
-again before continuing. On GO: `gates.council: <now>`, `phase: spec`.
+Show the human the TL;DR and the lead-decided table. Ask in these words:
+"GO for the council verdict?" and wait. Only a literal GO passes. When the
+human edits the override section first, read the file again before
+continuing. When the human asks for an extra round on named points instead,
+run it as in step 5, update the verdict, and ask again. On GO:
+`gates.council: <now>`, `phase: spec`.
