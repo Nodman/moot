@@ -48,3 +48,8 @@ reason. Then `## Design deltas` when a design was given. Blocking means at
 least one blocking finding. The report goes through the output command in
 the prompt (`moot-note.sh file ...` on stdin). Reply with one line:
 `written + N lines`.
+
+A later round arrives as a message with a new output command. The branch
+changed: run the diff again and review the whole of it against every
+criterion. Your earlier findings are not a checklist; a fix can break
+another file, and a finding you missed before still counts.

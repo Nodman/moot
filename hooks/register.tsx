@@ -30,7 +30,32 @@ async function statePath($: EngineInterface): Promise<string | null> {
   return id ? `${repo.root}/.moot/work/${id}/state.json` : null
 }
 
+// The engine's own status per agent beats what the hooks below pieced together.
+const ENGINE_STATUS: Record<string, string> = {
+  running: 'running',
+  completed: 'done',
+  killed: 'done',
+  failed: 'failed',
+  idle: 'idle',
+  waiting: 'idle',
+  pending: 'idle',
+}
+
+async function syncAgents($: EngineInterface) {
+  const infos = await $.agent.list().catch(() => null)
+  if (!infos) return
+  const byId = new Map(infos.map(a => [a.id, a]))
+  await update($, live, list =>
+    (list ?? []).map(a => {
+      const info = byId.get(a.id)
+      const status = info ? (ENGINE_STATUS[info.status] ?? a.status) : 'done' // dropped from the list: ended
+      return status === a.status ? a : { ...a, status }
+    }),
+  )
+}
+
 async function reload($: EngineInterface) {
+  await syncAgents($)
   const readAt = await $.clock.now()
   const path = await statePath($)
   if (!path) {
@@ -155,9 +180,10 @@ export const register: Register = on => {
     }
     const spin = SPIN[(t ?? 0) % SPIN.length]
     const sym = (status: string | undefined) => {
-      if (status === 'done') return <Text color="success">✓</Text>
+      if (status === 'done' || status === 'approved') return <Text color="success">✓</Text>
       if (status === 'running' || status === 'active') return <Text color="warning">{spin}</Text>
       if (status === 'lost' || status === 'failed') return <Text color="error">✗</Text>
+      if (status === 'idle') return <Text dimColor>◌</Text>
       return <Text dimColor>○</Text>
     }
     const phases: { name: string; status: string; detail: string; gate: boolean }[] = [

@@ -44,3 +44,8 @@ Write the findings file at the output path. First line: `Verdict: pass` or
 `Verdict: fail`. Then one bullet per finding: `section · defect · why it
 blocks · the fix`. No praise, no summary. You never edit the spec or any
 other file. Reply with one line: `written + N lines`.
+
+A later round arrives as a message with a new output path. The spec was
+rewritten: read it again in full and score the whole document against
+every criterion. Your earlier findings are not a checklist; a fix can break
+another section, and a finding you missed before still counts.

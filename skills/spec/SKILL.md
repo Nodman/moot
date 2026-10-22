@@ -30,22 +30,29 @@ section and its name; the renderer and the judge depend on them. Bullets
 over prose. The Decisions table holds the settled points, the lead-decided
 points, and the human's answers, each with its source. Requirements are
 numbered and each one is checkable. Tests are one-line behaviours, no test
-code. Before the judge, read the spec again as the judge would: template
+code. A design frame is shown, not named: `![<what it shows>](assets/<file>)`
+on its own line where the behaviour is described; the renderer embeds it
+in the page. Before the judge, read the spec again as the judge would: template
 text left in, placeholders, contradictions, two-way readings, verdict points
 dropped silently.
 
 ## 4. Judge
 
 Spawn `moot:spec-judge` with the model from the judge row of
-`.moot/roles.md`, name `spec-judge-<n>`, in the background. Prompt: the
+`.moot/roles.md`, name `spec-judge`, in the background. Prompt: the
 absolute paths of the spec, the verdict, the factpack, the assets folder,
-and the output file `spec-judge-<n>.md` in the work dir. Add it to
-`state.agents[]`. Read the findings file, shut the judge down, mark it done.
+and the output file `spec-judge-1.md` in the work dir. Add it to
+`state.agents[]`. Read the findings file.
 
 On `fail`: fix every finding in `spec.md`, bump `spec.judgeRounds`, and
-spawn a fresh judge with the next number. When you believe a finding is
-wrong, say so to the human instead of ignoring it. After three fails stop
-and show the human the open findings.
+SendMessage the same judge: "Round <n>. The spec changed. Re-read it in
+full and score it against every criterion again, not only your earlier
+findings. Output: <work dir>/spec-judge-<n>.md." One judge per spec keeps
+its reads cached; a fresh one would pay for them again. When you believe
+a finding is wrong, say so to the human instead of ignoring it. After
+three fails stop and show the human the open findings.
+
+On `pass`, or when you stop: shut the judge down, mark it done.
 
 ## 5. Page
 
@@ -68,5 +75,6 @@ Comments sent to Claude from the page, and answers in the chat, are
 feedback: fold them into `spec.md`, run the judge once more if the change
 is more than wording, re-render, publish to the same url, and ask again.
 
-On GO: `gates.spec: <now>`, `spec.status: approved`, `phase: plan`. Next is
-`/moot:plan`.
+On GO: `gates.spec: <now>`, `spec.status: approved`, `phase: plan`, and
+stop watching the page (ArtifactComments `watch` with `on: false`): the
+spec is locked, later comments are not feedback. Next is `/moot:plan`.

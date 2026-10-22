@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# moot setup helper: check | ignore local|global | scaffold
+# moot setup helper: check | ignore local|global | scaffold | upgrade
 set -euo pipefail
 
 here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -94,9 +94,99 @@ scaffold() {
   seed "$tpl/gotchas-index.md" .moot/gotchas/index.md
 }
 
+# Brings an older .moot/ up to the current templates. Values the repo has are never changed:
+# config.json gains the keys the template added; repo.md gains the sections and lines the
+# template added (as unknown) and renamed lines keep their value under the new label; roles.md
+# gains the roles its table lacks. Prints one line per change, or "up to date".
+upgrade() {
+  [[ -d .moot ]] || die "no .moot/ here; run scaffold first"
+  local changed=0
+  if [[ -f .moot/config.json ]]; then
+    local merged added
+    merged="$(jq -s '.[0] * .[1]' "$tpl/config.json" .moot/config.json)"
+    added="$(jq -n --argjson t "$(cat "$tpl/config.json")" --argjson c "$(cat .moot/config.json)" \
+      '[($t | paths(type != "object")) as $p | select(($c | getpath($p)) == null) | $p | join(".")] | .[]' -r)"
+    if [[ -n "$added" ]]; then
+      printf '%s\n' "$merged" > .moot/config.json
+      while IFS= read -r k; do echo "config: added $k"; done <<< "$added"; changed=1
+    fi
+    local stale
+    stale="$(jq -n --argjson t "$(cat "$tpl/config.json")" --argjson c "$(cat .moot/config.json)" \
+      '[($c | paths(type != "object")) as $p | select(($t | getpath($p)) == null) | $p | join(".")] | .[]' -r)"
+    [[ -n "$stale" ]] && while IFS= read -r k; do echo "config: $k is no longer read (left in place)"; done <<< "$stale"
+  fi
+  if [[ -f .moot/repo.md ]]; then
+    python3 - "$tpl/repo.md" .moot/repo.md <<'PY2' && changed=1 || true
+import re, sys
+tpl, dst = open(sys.argv[1]).read().splitlines(), open(sys.argv[2]).read().splitlines()
+RENAMED = {  # old label as written → the key of the template line that replaced it
+    "capture a screenshot of a screen (command taking `<route> <out.png>`):": "capture a screenshot of a screen",
+    "setup command to run inside a fresh worktree:": "setup inside a fresh worktree",
+}
+key = lambda label: re.split(r":| \(", label, maxsplit=1)[0].strip()
+# template: section → [(key, full label)]
+sections, cur = {}, None
+for line in tpl:
+    if line.startswith("## "): cur = line[3:].strip(); sections.setdefault(cur, [])
+    elif cur and line.startswith("- "): sections[cur].append((key(line[2:]), line[2:].rstrip()))
+changes = []
+out, cur, have = [], None, {}
+def flush():  # add the current section's missing lines before leaving it
+    missing = [(k, label) for k, label in sections.get(cur, []) if k not in have]
+    if not missing: return
+    while out and out[-1] == "": out.pop()
+    for k, label in missing:
+        out.append(f"- {label} unknown"); changes.append(f"repo.md: added '{k}' under {cur}")
+    out.append("")
+for line in dst:
+    if line.startswith("## "):
+        flush(); cur = line[3:].strip(); have = {}; out.append(line); continue
+    if line.startswith("- ") and cur in sections:
+        for old, newkey in RENAMED.items():
+            if line[2:].startswith(old):
+                label = next((l for k, l in sections[cur] if k == newkey), None)
+                if label:
+                    line = f"- {label} {line[2 + len(old):].strip()}".rstrip()
+                    changes.append(f"repo.md: renamed '{old.rstrip(':')}' to '{newkey}'")
+        have[key(line[2:])] = True
+    out.append(line)
+flush()
+for name, lines in sections.items():
+    if not any(l.strip() == f"## {name}" for l in dst):
+        out += ["", f"## {name}", ""] + [f"- {label} unknown" for _, label in lines]
+        changes.append(f"repo.md: added section {name}")
+if changes:
+    open(sys.argv[2], "w").write("\n".join(out).rstrip("\n") + "\n")
+    print("\n".join(changes)); sys.exit(0)
+sys.exit(1)
+PY2
+  fi
+  if [[ -f .moot/roles.md ]]; then
+    local role
+    while IFS= read -r row; do
+      role="$(printf '%s' "$row" | awk -F'|' '{gsub(/^ +| +$/, "", $2); print $2}')"
+      if ! grep -q "^| $role |" .moot/roles.md; then
+        # append after the last table row
+        python3 - .moot/roles.md "$row" <<'PY3'
+import sys
+p, row = sys.argv[1], sys.argv[2]
+lines = open(p).read().splitlines()
+last = max(i for i, l in enumerate(lines) if l.startswith("| "))
+lines.insert(last + 1, row)
+open(p, "w").write("\n".join(lines) + "\n")
+PY3
+        echo "roles: added the $role row"; changed=1
+      fi
+    done < <(grep '^| ' "$tpl/roles.md" | grep -v '^| role |\|^|---')
+    grep -q 'xhigh' .moot/roles.md && echo "roles: effort xhigh is no longer routed; set those rows to high"
+  fi
+  [[ "$changed" == 1 ]] || echo "upgrade: up to date"
+}
+
 case "${1:-}" in
   check) check ;;
   ignore) ignore "${2:-}" ;;
   scaffold) scaffold ;;
-  *) die "usage: setup.sh check | ignore local|global | scaffold" ;;
+  upgrade) upgrade ;;
+  *) die "usage: setup.sh check | ignore local|global | scaffold | upgrade" ;;
 esac

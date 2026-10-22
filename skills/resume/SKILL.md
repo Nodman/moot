@@ -18,9 +18,10 @@ already injected the START HERE section; this skill reads the rest.
    Mark them `lost` with `moot-state.sh jq` and say which reports exist on
    disk and which do not. Codex agents keep their session id; a later round
    can resume them, do not mark those lost.
-3. For every link with a url to a review page, call ArtifactComments with
-   action `watch` so comments sent to Claude reach this session again. Then
-   read the comments once and list the unresolved threads.
+3. When a GO is open, call ArtifactComments with action `watch` on that
+   page's url, so comments sent to Claude reach this session again, then
+   read its comments once and list the unresolved threads. Pages whose gate
+   has passed are locked and are not watched.
 4. If the hook or the handoff reports context above the threshold, stop here
    and tell the human to start a fresh session.
 5. Say the next action and the open GO in two lines and wait. Nothing runs

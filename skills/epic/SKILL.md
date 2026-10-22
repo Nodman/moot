@@ -40,6 +40,11 @@ tool and ask the human which ones matter. Without a connected tool, ask
 the human for exported PNGs. Members and judges only see files in
 `assets/`, never the design tool.
 
+Size: the spec and plan pages embed these images, and a published page may
+hold 16MB in all. Keep a frame under 1MB: the tool's default width (1024px
+for Figma) is enough, and a bigger export is shrunk in place with `sips -Z
+1600 <file>` on macOS or `magick <file> -resize '1600x1600>' <file>`.
+
 Figma, as the example: `create_session` with the file key, `get_screenshot`
 per frame link (`node-id` in the url) in its default mode, which returns a
 short-lived url, then `curl -o`; `get_metadata` lists the frames of a link
@@ -70,7 +75,7 @@ shortened for an epic.
 Once per epic, when `worktree.enabled` in `.moot/config.json` is true:
 EnterWorktree with the name `<id in lower case>`. The session is now in
 `.claude/worktrees/<name>` on branch `worktree-<name>`. Run the profile's
-`worktree.setup` command there. Store the absolute path in
+worktree setup steps there, in order. Store the absolute path in
 `state.worktree`. When the state already names a worktree, EnterWorktree
 with that `path` instead. Worktrees off: stay in the main checkout and
 say so.

@@ -13,17 +13,24 @@ what it looks like after, and how the after compares to the design.
 Screenshots and logs stay with you; the lead gets the report.
 
 The lead's prompt gives you: the worktree path, the base and the branch,
-the launch and capture commands from the repo profile, the route or screen
-to capture, the design asset path, the evidence folder, and your output
-command.
+the launch and capture lines from the repo profile, each a command or a
+procedure, the route or screen to capture, the design asset path, the
+evidence folder, and your output command. When a line is a procedure,
+load every skill it names and follow its steps in order; the result is
+still one PNG per capture at the paths below. A step you cannot complete
+is written down as `human-only` with what is missing.
 
 ## Process
 
-1. Check out the base branch in the worktree, run the launch command, run
-   the capture command for the route, save it as `before.png` in the
+1. Check out the base branch in the worktree, launch the app as the
+   profile says (a command, or steps to follow), capture the route the
+   same way, save it as `before.png` in the
    evidence folder. Then check out the PR branch and do the same into
    `after.png`. Copy the design asset next to them as `design.png` when it
-   is an image.
+   is an image. The evidence page embeds all three and may hold 16MB in
+   all, so keep each file under 2MB: shrink a bigger capture in place with
+   `sips -Z 1600 <file>` on macOS or `magick <file> -resize '1600x1600>'
+   <file>`, after you have compared the full-size images.
 2. Compare after to design, then after to before. Read the images. List
    every delta with exact words: spacing, colour, copy, alignment, missing
    or extra elements, states the design shows that the screen does not.

@@ -65,27 +65,34 @@ second time, stop and tell the human.
 
 ## Review
 
-Spawn `moot:reviewer`, name `reviewer-<id>-<n>`, model from the reviewer
+Spawn `moot:reviewer`, name `reviewer-<id>`, model from the reviewer
 row, background. Prompt: worktree, base, branch, brief path, executor
 report path, design asset or evidence report when one exists, repo rules
 to load, test command, and the output command for
-`tasks/<id>/review-<n>.md`. Read the findings file.
+`tasks/<id>/review-1.md`. Read the findings file.
 
 `blocking`: append stages "fixes after review #n" and "review #n+1". Send
 the findings to the same executor with SendMessage (spawn a fresh one when
-it is gone), wait, verify again as above, commit, and review again with
-the same reviewer name plus the next number. Two fix rounds without a clean
-verdict: stop and show the human the open findings. Tests the reviewer
-marked delete or merge are part of the fix round.
+it is gone), wait, verify again as above, commit, then SendMessage the same
+reviewer: "Round <n+1>. The branch changed. Review the whole diff again
+against every criterion, not only your earlier findings. Output:
+<output command for tasks/<id>/review-<n+1>.md>." One executor and one
+reviewer per task keep their reads cached; a fresh one pays for them
+again. Two fix rounds without a clean verdict: stop and show the human the
+open findings. Tests the reviewer marked delete or merge are part of the
+fix round.
 
-`clean`: shut the reviewer down and move on.
+`clean`, or when you stop: shut the reviewer down and move on. The
+executor stays until the draft PR is open.
 
 ## Evidence
 
-Only when the repo profile has a capture command and the PR touches UI;
-otherwise mark the stage done with "n/a: <reason>" and say so in the PR
-body. Spawn `moot:qa`, name `qa-<id>`, model from the qa row, background.
-Prompt: worktree, base, branch, launch and capture commands, route, design
+Only when the repo profile has a capture command or procedure and the PR
+touches UI; otherwise mark the stage done with "n/a: <reason>", say so in
+the PR body, and at the first skipped PR of the work tell the human which
+profile line would turn it on. Spawn `moot:qa`, name `qa-<id>`, model from
+the qa row, background. Prompt: worktree, base, branch, the launch and
+capture lines of the profile verbatim, route, design
 asset, evidence folder `tasks/<id>/evidence/` (absolute), template path
 `${CLAUDE_PLUGIN_ROOT}/templates/evidence-report.md`, and the output command
 for `tasks/<id>/evidence/report.md`. Read the report, then render it:
@@ -94,8 +101,8 @@ for `tasks/<id>/evidence/report.md`. Read the report, then render it:
 render-page.sh <work dir>/tasks/<id>/evidence/report.md --eyebrow "Evidence · <id>"
 ```
 
-When `pages` is `artifact`, publish `report.html` with the Artifact tool,
-passing `before.png`, `after.png`, and `design.png` in `files`, and store
+When `pages` is `artifact`, publish `report.html` with the Artifact tool;
+the captures are embedded in it. Store
 `{label: "Evidence <id>", url, path: "tasks/<id>/evidence/report.html"}` in
 the links. Deltas against the design that the human did not approve go back
 to the executor as a fix round, then review again.
@@ -115,9 +122,10 @@ gh pr create --draft --base <base branch> --head <branch> --title "<id>: <title>
 ```
 
 Store the PR number in `tasks[].pr`, add `{label: "PR #<n>", url}` to the
-links, mark the stage done. When `tracker` is `github` or `repo`, attach
-the PR link to the ticket with the profile's command; never edit a ticket
-the lead did not create. Tell the human the PR url and the next task.
+links, mark the stage done. Shut the executor down and mark it done with
+`endedAt`. When `tracker` is `github` or `repo`, attach the PR link to the
+ticket with the profile's command; never edit a ticket the lead did not
+create. Tell the human the PR url and the next task.
 
 Stops happen only on a failed verify twice, a blocking review after two fix
 rounds, or an agent that needs the human. Everything else runs to the

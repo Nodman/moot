@@ -7,7 +7,9 @@
 # TL;DR section becomes the top block; sections named Tests and plan sections named "PR n" are
 # collapsed; Human override, Decisions, Lead-decided points, Open questions and Open points are
 # framed. Markdown covered: headings to h3, paragraphs, lists with one level of nesting, tables,
-# fenced code, blockquotes, rules, inline code, bold, italics, links. Prints the output path.
+# fenced code, blockquotes, rules, inline code, bold, italics, links, images. An image whose path
+# is a local file (relative to the markdown) is embedded into the page, so the published page needs
+# no other files. Prints the output path.
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib.sh"
 need python3
 here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -24,10 +26,26 @@ while [[ $# -gt 0 ]]; do
 done
 
 python3 - "$in" "$out" "$eyebrow" "$here/../templates/page.html" <<'PY'
-import html, re, sys
+import base64, html, mimetypes, os, re, sys
 
 src, out, eyebrow, shell = sys.argv[1:5]
 lines = open(src, encoding="utf-8").read().splitlines()
+base = os.path.dirname(os.path.abspath(src))
+
+
+LIMIT = 16 * 1024 * 1024   # what a published page may hold, embedded images included
+embedded = []
+
+
+def image(m):
+    alt, path = m.group(1), html.unescape(m.group(2))
+    local = path if os.path.isabs(path) else os.path.join(base, path)
+    if os.path.isfile(local):
+        mime = mimetypes.guess_type(local)[0] or "application/octet-stream"
+        raw = open(local, "rb").read()
+        embedded.append((local, len(raw)))
+        path = f"data:{mime};base64,{base64.b64encode(raw).decode('ascii')}"
+    return f'<img src="{path}" alt="{alt}">'
 
 COLLAPSED = re.compile(r"^(tests\b|pr \d)", re.I)
 FRAMED = re.compile(r"^(human override|decisions|lead-decided|open questions|open points|questions for the human)", re.I)
@@ -46,7 +64,7 @@ def inline(text):
             continue
         part = re.sub(r"\*\*(.+?)\*\*", r"<strong>\1</strong>", part)
         part = re.sub(r"(?<![\w*])\*(?!\s)(.+?)(?<!\s)\*(?![\w*])", r"<em>\1</em>", part)
-        part = re.sub(r"!\[([^\]]*)\]\(([^)\s]+)\)", r'<img src="\2" alt="\1">', part)
+        part = re.sub(r"!\[([^\]]*)\]\(([^)\s]+)\)", image, part)
         part = re.sub(r"\[([^\]]+)\]\(([^)\s]+)\)", r'<a href="\2">\1</a>', part)
         res.append(part)
     return "".join(res)
@@ -197,6 +215,10 @@ doc = open(shell, encoding="utf-8").read()
 for key, value in (("{{title}}", page.title or "Untitled"), ("{{eyebrow}}", html.escape(eyebrow, quote=False)),
                    ("{{toc}}", toc), ("{{lede}}", page.lede), ("{{body}}", "\n".join(page.out))):
     doc = doc.replace(key, value)
+if len(doc.encode("utf-8")) > LIMIT:
+    biggest = sorted(embedded, key=lambda e: -e[1])[:5]
+    sys.exit("page would be over 16MB; shrink these first (sips -Z 1600 <file>):\n"
+             + "\n".join(f"  {size // 1024}K  {path}" for path, size in biggest))
 open(out, "w", encoding="utf-8").write(doc)
 print(out)
 PY

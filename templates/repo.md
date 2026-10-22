@@ -26,13 +26,13 @@ value; a guessed command is not.
 
 ## Running and capturing
 
-- launch the app:
-- capture a screenshot of a screen (command taking `<route> <out.png>`):
+- launch the app (one command, or numbered steps naming a skill or a command each):
+- capture a screenshot of a screen: a command taking `<route> <out.png>`, or the procedure as numbered steps, each naming the skill to load or the command to run (may span several lines):
 - notes (simulators, devices, env vars, seed data):
 
 ## Worktrees
 
-- setup command to run inside a fresh worktree:
+- setup inside a fresh worktree (commands in order, one per line):
 - things that break in a worktree:
 
 ## Rules the repo already has

@@ -43,6 +43,12 @@ Skip the question when `setup.sh check` reports `.moot/` as already ignored.
 seeds `config.json`, `roles.md` and `gotchas/index.md` from the plugin
 templates when they are absent. It prints what it created and what it skipped.
 
+When `.moot/` existed already, run `setup.sh upgrade` next. It brings the
+three files up to the current templates without changing a value the repo
+has: new config keys, new profile sections and lines as `unknown`, renamed
+profile lines under their new label, missing role rows. Show its lines to
+the user. The new `unknown` lines are asked in step 4 like any other.
+
 ## 4. Repo profile
 
 Spawn the `moot:legwork` agent (model from the legwork row of
@@ -58,16 +64,29 @@ Spawn the `moot:legwork` agent (model from the legwork row of
 - Reply with one line: `written + N lines`.
 
 If `.moot/repo.md` already exists, ask the user whether to refresh it before
-spawning. On refresh, the agent reads the old file first and keeps every
-human edit it cannot contradict with evidence.
+spawning; after an upgrade the default is no, the questionnaire below
+covers the new lines. On refresh, the agent reads the old file first and
+keeps every human edit it cannot contradict with evidence.
+
+Then read the profile and ask the user about every line that is still
+`unknown` among: main branch, test (all), type check, lint, launch the
+app, capture a screenshot, worktree setup. One AskUserQuestion per line,
+quoting what the agent found next to the `unknown` so the user can confirm
+a pointer or type the command or skill name. "Not available" is a valid
+answer and stays `unknown`. Write every answer into `.moot/repo.md` in
+place of the `unknown`, marked `(from the human)`. The capture line takes a
+command with `<route> <out.png>`, or the procedure the QA agent is to
+follow: numbered steps, each naming a skill to load or a command to run.
+When the human describes it loosely, write the steps out and show them
+once for a yes. Without one, no PR gets an evidence page, say so here.
 
 ## 5. Seed config from the profile
 
 Read `.moot/repo.md` and update `.moot/config.json` with the facts it holds:
-`mainBranch`, `merge`, `ticketPrefix`, `worktree.setup`, `evidence.capture`,
-and `tracker` (set to `repo` when the profile names all three tracker
-operations, otherwise leave `none`). Keep every other key as it is. Show the
-user the resulting file.
+`mainBranch`, `merge`, `ticketPrefix`, and `tracker` (set to `repo` when
+the profile names all three tracker operations, otherwise leave `none`).
+Commands and procedures stay in the profile only; the skills read them
+there. Keep every other key as it is. Show the user the resulting file.
 
 ## 6. Roles
 
@@ -84,5 +103,6 @@ marked `unknown`). Then print the next steps:
 - `/moot:task` for a single ticket or fix.
 - `/moot-dash` for the dashboard pane.
 
-Re-running setup is safe: existing files are kept, the ignore step is
-skipped when already done, and only the profile asks before a refresh.
+Re-running setup is safe: existing files are kept and upgraded in place,
+the ignore step is skipped when already done, and only the profile asks
+before a refresh. After a plugin update, `/moot:setup` is the upgrade path.

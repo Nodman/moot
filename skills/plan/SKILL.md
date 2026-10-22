@@ -39,7 +39,8 @@ section name. The PR list table is the page's primary view, so every row
 stands alone. Each PR section holds the exact files, the interfaces it
 produces or consumes, one-line test behaviours, and the brief notes the
 executor will need: repo rules that apply, gotcha topics, the asset to
-compare against, verification commands. No test code, no implementation
+compare against as `![<what it shows>](assets/<file>)` so the page shows
+it, verification commands. No test code, no implementation
 code: real code in plans is what makes reviews hard. Before the judge, read
 the plan as the judge would: every requirement mapped, no drift in names,
 bases correct, nothing too big.
@@ -47,13 +48,18 @@ bases correct, nothing too big.
 ## 4. Judge
 
 Spawn `moot:plan-judge` with the model from the judge row of
-`.moot/roles.md`, name `plan-judge-<n>`, in the background. Prompt: the
+`.moot/roles.md`, name `plan-judge`, in the background. Prompt: the
 absolute paths of the plan, the spec, the factpack, the assets folder, the
-repo profile, and the output file `plan-judge-<n>.md` in the work dir. Add it to
-`state.agents[]`. Read the findings file, shut the judge down, mark it done.
+repo profile, and the output file `plan-judge-1.md` in the work dir. Add
+it to `state.agents[]`. Read the findings file.
 
-On `fail`: fix every finding, bump `plan.judgeRounds`, spawn a fresh judge.
+On `fail`: fix every finding, bump `plan.judgeRounds`, and SendMessage the
+same judge: "Round <n>. The plan changed. Re-read it in full and score it
+against every criterion again, not only your earlier findings. Output:
+<work dir>/plan-judge-<n>.md." One judge per plan keeps its reads cached.
 After three fails stop and show the human the open findings.
+
+On `pass`, or when you stop: shut the judge down, mark it done.
 
 ## 5. Page
 
@@ -74,7 +80,9 @@ the plan?" and wait. Only a literal GO passes. Feedback from the page or
 the chat is folded in, judged again when it changes more than wording,
 re-rendered, published to the same url, and asked again.
 
-On GO: `gates.plan: <now>`, `plan.status: approved`, `phase: execute`.
+On GO: `gates.plan: <now>`, `plan.status: approved`, `phase: execute`, and
+stop watching the page (ArtifactComments `watch` with `on: false`): the
+plan is locked, later comments are not feedback.
 
 ## 7. Tasks
 
