@@ -27,7 +27,12 @@ is written down as `human-only` with what is missing.
    same way, save it as `before.png` in the
    evidence folder. Then check out the PR branch and do the same into
    `after.png`. Copy the design asset next to them as `design.png` when it
-   is an image. The evidence page embeds all three and may hold 16MB in
+   is an image. Look at it first: when the frame shows the screen inside a
+   device mockup, with a bezel, a shadow or a canvas margin around it,
+   crop it to the screen area (`magick design.png -crop WxH+X+Y +repage
+   design.png`, or `sips -c H W --cropOffset Y X`), so the page shows the
+   design and the captures at one scale. Crop the captures the same way
+   only when they carry a frame too. The evidence page embeds all three and may hold 16MB in
    all, so keep each file under 2MB: shrink a bigger capture in place with
    `sips -Z 1600 <file>` on macOS or `magick <file> -resize '1600x1600>'
    <file>`, after you have compared the full-size images.

@@ -63,6 +63,18 @@ blockquote{margin:0 0 12px;padding:2px 0 2px 14px;border-left:3px solid var(--li
 hr{border:0;border-top:1px solid var(--line);margin:24px 0}
 .note{font-size:15px;color:var(--muted)}
 img{max-width:100%;height:auto;border:1px solid var(--line);border-radius:6px}
+.compare{margin:8px 0 20px;--h:min(72vh,720px)}
+.compare input{position:absolute;opacity:0;pointer-events:none}
+.compare .tabs{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px}
+.compare .tabs label{font-family:var(--mono);font-size:13px;padding:5px 12px;border:1px solid var(--line);border-radius:999px;cursor:pointer;color:var(--muted)}
+.compare .tabs label:hover{color:var(--fg)}
+.compare .pane{display:none;height:var(--h);align-items:flex-start;justify-content:center;gap:12px;overflow-x:auto}
+.compare .pane img{height:100%;width:auto;max-width:none;object-fit:contain}
+.compare .pane.all figure{margin:0;height:100%;display:flex;flex-direction:column;align-items:center;min-width:0}
+.compare .pane.all figure img{height:calc(100% - 22px)}
+.compare .pane.all figcaption{font-family:var(--mono);font-size:12px;color:var(--muted);line-height:22px}
+.compare input:nth-of-type(1):checked~.tabs label:nth-of-type(1),.compare input:nth-of-type(2):checked~.tabs label:nth-of-type(2),.compare input:nth-of-type(3):checked~.tabs label:nth-of-type(3),.compare input:nth-of-type(4):checked~.tabs label:nth-of-type(4),.compare input:nth-of-type(5):checked~.tabs label:nth-of-type(5),.compare input:nth-of-type(6):checked~.tabs label:nth-of-type(6),.compare input:nth-of-type(7):checked~.tabs label:nth-of-type(7){background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.compare input:nth-of-type(1):checked~.pane.p0,.compare input:nth-of-type(2):checked~.pane.p1,.compare input:nth-of-type(3):checked~.pane.p2,.compare input:nth-of-type(4):checked~.pane.p3,.compare input:nth-of-type(5):checked~.pane.p4,.compare input:nth-of-type(6):checked~.pane.p5,.compare input:nth-of-type(7):checked~.pane.p6{display:flex}
 a{color:var(--accent)}
 :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 </style>

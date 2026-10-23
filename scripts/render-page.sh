@@ -9,7 +9,10 @@
 # framed. Markdown covered: headings to h3, paragraphs, lists with one level of nesting, tables,
 # fenced code, blockquotes, rules, inline code, bold, italics, links, images. An image whose path
 # is a local file (relative to the markdown) is embedded into the page, so the published page needs
-# no other files. Prints the output path.
+# no other files. A table whose body cells are all images (the captures table of an evidence
+# report) becomes a compare widget: the images side by side at one height, and a tab per column
+# that shows that version alone at the same height, so flipping tabs compares them in place.
+# Prints the output path.
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib.sh"
 need python3
 here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -35,6 +38,8 @@ base = os.path.dirname(os.path.abspath(src))
 
 LIMIT = 16 * 1024 * 1024   # what a published page may hold, embedded images included
 embedded = []
+IMG_CELL = re.compile(r"^!\[([^\]]*)\]\(([^)\s]+)\)$")
+compare_count = 0
 
 
 def image(m):
@@ -125,12 +130,34 @@ class Page:
             return
         self.out.append(f"<p>{inline(text)}</p>")
 
+    def compare(self, head, body):
+        # one widget per row; the header labels are the tabs, the first tab is the side-by-side view
+        global compare_count
+        for r, row in enumerate(body):
+            compare_count += 1
+            name = f"cmp{compare_count}"
+            labels = ["side by side"] + [inline(c) for c in head]
+            h = [f'<div class="compare">']
+            for i, label in enumerate(labels):
+                h.append(f'<input type="radio" name="{name}" id="{name}-{i}"{" checked" if i == 0 else ""}>')
+            h.append('<div class="tabs">' + "".join(f'<label for="{name}-{i}">{l}</label>' for i, l in enumerate(labels)) + "</div>")
+            imgs = [image(IMG_CELL.match(c)) for c in row]
+            h.append('<div class="pane p0 all">' + "".join(f'<figure>{im}<figcaption>{l}</figcaption></figure>' for im, l in zip(imgs, labels[1:])) + "</div>")
+            h += [f'<div class="pane p{i + 1} one">{im}</div>' for i, im in enumerate(imgs)]
+            if len(body) > 1:
+                h.append(f'<div class="note">row {r + 1} of {len(body)}</div>')
+            h.append("</div>")
+            self.out.append("".join(h))
+
     def table(self, rows):
         cells = [[c.strip() for c in r.strip().strip("|").split("|")] for r in rows]
         if len(cells) > 1 and all(re.fullmatch(r":?-+:?", c or "-") for c in cells[1]):
             head, body = cells[0], cells[2:]
         else:
             head, body = None, cells
+        if head and body and all(IMG_CELL.match(c) for r in body for c in r) and all(len(r) == len(head) for r in body):
+            self.compare(head, body)
+            return
         h = ['<div class="tablewrap"><table>']
         if head:
             h.append("<thead><tr>" + "".join(f"<th>{inline(c)}</th>" for c in head) + "</tr></thead>")

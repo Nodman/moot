@@ -12,6 +12,8 @@
 |---|---|---|
 | ![design](design.png) | ![before](before.png) | ![after](after.png) |
 
+<The page turns this table into a compare widget: one tab per column, images at one height. One row per screen state or scroll position; add columns such as "after (control)" when there are more arms.>
+
 ## Deltas against the design
 
 - <Exact words: element, what the design shows, what the screen shows.>
