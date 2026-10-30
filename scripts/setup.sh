@@ -35,6 +35,7 @@ check() {
 
   if have gh && gh auth status >/dev/null 2>&1; then echo "gh: ok"; else echo "gh: missing or not logged in"; fi
   if have jq; then echo "jq: ok"; else echo "jq: missing"; fi
+  if gh stack --version >/dev/null 2>&1; then echo "gh stack: ok"; else echo "gh stack: missing (gh extension install github/gh-stack)"; fi
 
   local codex
   codex="$(probe codex)"

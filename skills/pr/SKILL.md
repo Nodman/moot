@@ -122,8 +122,15 @@ gh pr create --draft --base <base branch> --head <branch> --title "<id>: <title>
 ```
 
 Store the PR number in `tasks[].pr`, add `{label: "PR #<n>", url}` to the
-links, mark the stage done. Shut the executor down and mark it done with
-`endedAt`. When `tracker` is `github` or `repo`, attach the PR link to the
+links, mark the stage done. When the chain now has two or more PRs, link
+them into a GitHub stack, bottom to top:
+
+```
+gh stack link <pr numbers of every task in order>
+```
+
+GitHub then restacks the open PRs itself after each merge; `/moot:pr-watch`
+follows it. Shut the executor down and mark it done with `endedAt`. When `tracker` is `github` or `repo`, attach the PR link to the
 ticket with the profile's command; never edit a ticket the lead did not
 create. Tell the human the PR url and the next task.
 

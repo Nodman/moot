@@ -27,6 +27,6 @@ a gotchas index, and a repo profile written by an inspection agent.
 
 - `/moot:epic`, `/moot:task`: start or continue work under full or light ceremony.
 - `/moot:council`, `/moot:spec`, `/moot:plan`, `/moot:pr`: the phases, run by the two above.
-- `/moot:merge`: while the human merges — PR comment triage, fix rounds, chain restack after each merge.
+- `/moot:pr-watch`: while the human merges — one pass per call: stack sync, PR comment triage, fix rounds, replies. `/loop /moot:pr-watch` keeps watching.
 - `/moot:resume`, `/moot:handoff`: session start and session end.
 - `/moot-dash [open|close|reload]`: the dashboard pane. It opens only when you ask for it.

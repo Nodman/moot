@@ -86,6 +86,7 @@ the chain runs until a stop. After the last draft PR set `phase: done`,
 write a handoff with `/moot:handoff`, and tell the human the list of PR
 urls in merge order and that the worktree stays until the chain is merged.
 
-The human merges. After each merge the remaining chain needs a rebase
-onto the main branch before the next PR is reviewed; `/moot:merge` does
-that, triages the PR comments, and closes the work after the last merge.
+The human merges. The chain is a GitHub stack, so GitHub rebases the
+open PRs itself after each merge; `/moot:pr-watch` syncs the worktree with
+it, triages the PR comments, runs fix rounds, and closes the work after
+the last merge. `/loop /moot:pr-watch` keeps watching until then.

@@ -18,6 +18,8 @@ Run `setup.sh check`. It prints one line per tool. Rules:
 - `gh` required and authenticated. Missing → tell the user how to install and
   log in, then stop.
 - `jq` required.
+- `gh stack` extension required for `/moot:pr` and `/moot:pr-watch`. Missing →
+  tell the user to run `gh extension install github/gh-stack`, then stop.
 - `codex` and `tmux` optional. Missing → say once that council rows with the
   codex runner stay dormant until it is installed. If `codex` prints
   `hangs`, show the user the path of the working copy the script found, if
@@ -83,7 +85,7 @@ once for a yes. Without one, no PR gets an evidence page, say so here.
 ## 5. Seed config from the profile
 
 Read `.moot/repo.md` and update `.moot/config.json` with the facts it holds:
-`mainBranch`, `merge`, `ticketPrefix`, and `tracker` (set to `repo` when
+`mainBranch`, `ticketPrefix`, and `tracker` (set to `repo` when
 the profile names all three tracker operations, otherwise leave `none`).
 Commands and procedures stay in the profile only; the skills read them
 there. Keep every other key as it is. Show the user the resulting file.

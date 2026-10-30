@@ -126,7 +126,7 @@ a{color:var(--accent)}
   </ul></div>
   <div class="card"><h3>Moot does not</h3><ul>
     <li>Run unattended. No autonomous mode, no board.</li>
-    <li>Merge. The human merges and resolves threads; <code>/moot:merge</code> triages comments, runs fix rounds, and restacks the chain with <code>chain-rebase.sh</code> after each merge.</li>
+    <li>Merge. The human merges. The chain is a GitHub stack, so GitHub restacks it after each merge; <code>/moot:pr-watch</code> syncs the worktree, triages comments, runs fix rounds, posts the replies, and resolves the threads its fixes closed.</li>
     <li>Know your repo. Build, test, run, and screenshot commands come from the repo profile.</li>
     <li>Define test style. Only the TDD loop and the gates are generic.</li>
     <li>Ship a status line. The dashboard is a mod pane.</li>
@@ -199,7 +199,7 @@ a{color:var(--accent)}
 <div>
 <h3>Repo side, git-ignored</h3>
 <pre><code>.moot/
-  config.json          tracker, merge policy, gates, thresholds
+  config.json          tracker, gates, thresholds
   roles.md             the roles table + banned models
   repo.md              repo profile (how to build, test, run, capture)
   gotchas/             one file per topic
@@ -230,7 +230,7 @@ a{color:var(--accent)}
   .claude-plugin/marketplace.json
   skills/
     setup  epic  task  council  spec  plan
-    pr  resume  handoff  merge
+    pr  resume  handoff  pr-watch
     routing  gotchas  tdd  debugging
   agents/
     council-member  spec-judge  plan-judge
@@ -240,7 +240,6 @@ a{color:var(--accent)}
     pr-body, evidence-report, page shell
   scripts/
     codex-run.sh   render-page.sh
-    chain-rebase.sh
     moot-state.sh  moot-note.sh     all writes under .moot/ go through these
   hooks/
     hooks.json  session-start.sh
@@ -356,7 +355,7 @@ a{color:var(--accent)}
 <p>Keeping it fresh: executor and qa reports have a field "profile wrong or incomplete". The lead updates the profile during the verify stage when that field is filled.</p>
 
 <h2 id="gotchas">Gotchas</h2>
-<p>One file per topic under <code>.moot/gotchas/</code> and an index with one line per file. The session start hook loads the index only. Each stage names the topics it needs: the merge skill loads the git topic, the executor brief includes the topics for the files it touches. A gotcha is appended the moment something bites, by the lead, in the same session.</p>
+<p>One file per topic under <code>.moot/gotchas/</code> and an index with one line per file. The session start hook loads the index only. Each stage names the topics it needs: the pr-watch skill loads the git topic, the executor brief includes the topics for the files it touches. A gotcha is appended the moment something bites, by the lead, in the same session.</p>
 
 <h2 id="agents">Agents and runners</h2>
 <p>An agent file is a charter the lead spawns with one line. It carries the role's job, its hard limits as a tools list, the report contract, and <code>model: inherit</code>. The lead passes the model from the roles table. Skills drive the lead through a phase; agents are the workers inside the phase.</p>
@@ -409,13 +408,12 @@ a{color:var(--accent)}
 
 <h2 id="setup">Setup and config</h2>
 <p><code>/moot:setup</code> creates <code>.moot/</code>, writes the roles table with defaults, asks the ignore question, checks tools (gh required, codex and tmux optional), runs the repo inspection, and ends with the profile open for review.</p>
-<p><code>config.json</code> is written once by setup: defaults plus what the inspection found (main branch, merge policy, ticket prefix come from the profile). After that you edit it by hand, like <code>roles.md</code>. Every skill reads it at start; nothing in the flow writes it back. Runtime values live in <code>state.json</code>.</p>
+<p><code>config.json</code> is written once by setup: defaults plus what the inspection found (main branch, ticket prefix come from the profile). After that you edit it by hand, like <code>roles.md</code>. Every skill reads it at start; nothing in the flow writes it back. Runtime values live in <code>state.json</code>.</p>
 <details><summary>Example <code>config.json</code> and what each key affects</summary>
 <pre><code>{
   "tracker": "none",                 // none | github | repo
   "ticketPrefix": "PROJ",
   "mainBranch": "main",
-  "merge": "squash",                 // squash | merge, from the repo profile
   "goPerPr": true,
   "worktree": { "enabled": true, "setup": "npm ci" },
   "council": { "maxContestedRounds": 3 },
@@ -428,7 +426,6 @@ a{color:var(--accent)}
 <tbody>
 <tr><td><code>tracker</code></td><td>The local tasks record always exists. This key decides whether it is mirrored outward and where ids come from. none: no mirror, ids minted from <code>ticketPrefix</code>. github: each task mirrored as a gh issue. repo: mirrored through the commands or skill the repo profile names (for example a connected Jira CLI). The mirror is three operations: create a task and record the external id back into <code>state.json</code>, fetch an existing ticket into <code>assets/</code> at intake, attach the PR link after the draft PR. When mirrored, the external id becomes the task id, so branches and folders match the tracker. If the mirror fails, the local record stays the truth and the lead reports it instead of stopping. Moot carries no tracker client of its own.</td></tr>
 <tr><td><code>ticketPrefix</code>, <code>mainBranch</code></td><td>Ids of new tasks when there is no mirror, and the base branch of the first PR in a stack.</td></tr>
-<tr><td><code>merge</code></td><td>How the merge skill and <code>chain-rebase.sh</code> treat a merged parent (squash vs merge commit).</td></tr>
 <tr><td><code>goPerPr</code></td><td>true: the lead asks GO before every PR. false: one GO at GO 3 runs the whole chain, stopping only on a failed verify, a blocking review after two fix rounds, or an agent asking for the human.</td></tr>
 <tr><td><code>worktree</code></td><td>Whether the epic gets its own worktree, and the command run inside it after creation.</td></tr>
 <tr><td><code>council.maxContestedRounds</code></td><td>The stop rule for contested rounds 3 to 5.</td></tr>
@@ -449,6 +446,7 @@ a{color:var(--accent)}
   <li>Task loop: brief, executor, verify, reviewer, qa, draft PR <span class="tag ok">done 2026-10-21</span></li>
   <li>Dashboard mod <span class="tag ok">done 2026-10-21</span></li>
   <li>Merge skill and <code>chain-rebase.sh</code> <span class="tag ok">done 2026-10-21</span></li>
+  <li>pr-watch skill on GitHub stacks, replacing the merge skill and <code>chain-rebase.sh</code> <span class="tag ok">done 2026-10-28</span></li>
 </ol>
 <p>Dogfood on the next real epic under full ceremony before polishing. Quick mode and the mod mature on that run.</p>
 
